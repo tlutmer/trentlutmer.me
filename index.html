@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trent Lutmer | Portfolio</title>
+    <meta name="description" content="Trent Lutmer | Portfolio" />
+    <script>
+      // Sets the colour theme before React mounts (no flash of the wrong one):
+      // the last pick ThemeDial stored, otherwise grey. Keep the ids in sync
+      // with src/components/ThemeDial/ThemeDial.jsx.
+      (function () {
+        var themes = ['grey', 'cyan', 'magenta', 'yellow']
+        var stored = null
+        try {
+          stored = localStorage.getItem('color-theme')
+        } catch {}
+        document.documentElement.setAttribute(
+          'data-color-theme',
+          themes.indexOf(stored) === -1 ? 'grey' : stored
+        )
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

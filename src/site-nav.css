@@ -1,0 +1,591 @@
+/* Nav + about headline, copied from trent-portfolio-v2 (App.css) and set in Kelex's
+   font tokens (--font-mono, --text-body, --font-weight-regular). */
+
+/* ── Site theme: colour ──
+   Every component resolves colour through custom properties, so redefining them per theme
+   reskins the whole site at once without touching any component file. A theme is a Kelex
+   colour family: its 300 step (grey: 200) is the text and card outlines, its 900 step (grey: 700)
+   is the page and card fill.
+     grey     grey-200     on grey-700
+     cyan     cyan-300     on cyan-900
+     magenta  magenta-300  on magenta-900
+     yellow   yellow-300   on yellow-900
+
+   Text states are tokens, and every theme fills them from the same steps of its own family —
+   grey's steps are the reference, and a coloured family is one step further along its ramp
+   (its text colour is the 300, where grey's is the 200):
+     --text           text                                grey-200  /  X-300
+     --text-emphasis  hover, the current page's link      grey-100  /  X-200
+     --text-muted     inactive links, ✦, secondary lines  grey-300  /  X-400
+     --text-pressed   a link while it is pressed          grey-200  /  X-300
+   A second pair sits on the theme family's own 100 and 300 steps (grey: grey-100 / grey-300):
+     --font-100  "Trent Lutmer", "Currently sipping", the selected/hovered Work or Info, a hovered link in a card
+     --font-300  Work / Info when not selected, the ✦, the roast name, the Work page's headline and card titles
+   The one exception is magenta's muted text: magenta-400 is too dark on magenta-900 to read
+   (3.3:1), so it stays on the 300 (4.3:1). Everything else is 5:1 or better.
+
+   The coloured themes also remap the --grey-N ramp (text colour to fill, mixed between), for
+   anything that still reads it; grey uses the real Kelex greys as they are, except that its
+   --grey-900 — what the page, the cards and the caption chips read as "the fill" — is grey-700.
+   ThemeDial.jsx sets `data-color-theme` on <html> (the same index.html inline script keeps the
+   very first paint, before React mounts, honest too). This block loads after tokens.css in the
+   bundle, so it wins the cascade over the light/dark [data-theme] toggle defined there. */
+[data-color-theme="grey"] {
+  --theme-fg: var(--grey-200);
+  --theme-bg: var(--grey-700);
+  --grey-900: var(--theme-bg);
+  --text: var(--grey-200);
+  --text-emphasis: var(--grey-100);
+  --text-muted: var(--grey-300);
+  --text-pressed: var(--grey-200);
+  --font-100: var(--grey-100);
+  --font-300: var(--grey-300);
+}
+[data-color-theme="cyan"] {
+  --theme-fg: var(--cyan-300);
+  --theme-bg: var(--cyan-900);
+  --text: var(--cyan-300);
+  --text-emphasis: var(--cyan-200);
+  --text-muted: var(--cyan-400);
+  --text-pressed: var(--cyan-300);
+  --font-100: var(--cyan-100);
+  --font-300: var(--cyan-300);
+}
+[data-color-theme="magenta"] {
+  --theme-fg: var(--magenta-300);
+  --theme-bg: var(--magenta-900);
+  --text: var(--magenta-300);
+  --text-emphasis: var(--magenta-200);
+  --text-muted: var(--magenta-300);
+  --text-pressed: var(--magenta-300);
+  --font-100: var(--magenta-100);
+  --font-300: var(--magenta-300);
+}
+[data-color-theme="yellow"] {
+  --theme-fg: var(--yellow-300);
+  --theme-bg: var(--yellow-900);
+  --text: var(--yellow-300);
+  --text-emphasis: var(--yellow-200);
+  --text-muted: var(--yellow-400);
+  --text-pressed: var(--yellow-300);
+  --font-100: var(--yellow-100);
+  --font-300: var(--yellow-300);
+}
+[data-color-theme="cyan"],
+[data-color-theme="magenta"],
+[data-color-theme="yellow"] {
+  --grey-100: var(--theme-fg);
+  --grey-200: var(--theme-fg);
+  --grey-300: color-mix(in srgb, var(--theme-fg) 85%, var(--theme-bg));
+  --grey-400: color-mix(in srgb, var(--theme-fg) 65%, var(--theme-bg));
+  --grey-500: color-mix(in srgb, var(--theme-fg) 45%, var(--theme-bg));
+  --grey-600: color-mix(in srgb, var(--theme-fg) 30%, var(--theme-bg));
+  --grey-700: color-mix(in srgb, var(--theme-fg) 18%, var(--theme-bg));
+  --grey-800: color-mix(in srgb, var(--theme-fg) 8%, var(--theme-bg));
+  --grey-900: var(--theme-bg);
+}
+
+/* ── Status (now lives inside .about__body-wrap, see About.jsx) ── */
+/* ── Top row (logo left, coffee status right, see SiteNav.jsx) ── */
+.site-header__top-row {
+  display: grid;
+  grid-template-columns: 1.5fr auto 3.5fr;
+  align-items: center;
+  width: 100%;
+  /* .work-links (this row's parent) now spans the full viewport edge to
+     edge with no padding of its own, so this is what keeps the logo/
+     coffee-status/dial off the actual screen edge. */
+  padding: 0 2rem;
+}
+.site-header__status {
+  grid-column: 2;
+  justify-self: center;
+  text-align: left;
+  padding-left: 5.25rem;
+}
+/* Theme dial (see ThemeDial.jsx) — top right of the nav, third column of the
+   same grid row as the logo/coffee status. A 4-circle Venn diagram; each
+   circle is a real <button>, absolutely positioned and overlapping its
+   neighbors; `mix-blend-mode` (plus `isolation` on the container, so the
+   blending stays within this group instead of reacting to whatever's
+   behind the nav) lets the overlaps read as tinted intersections instead
+   of one circle just occluding another. Clicking a circle switches to that
+   theme (see the [data-color-theme] rules; ThemeTransition.jsx plays its effect
+   over the page while the change is applied). */
+.theme-dial {
+  grid-column: 3;
+  justify-self: end;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  isolation: isolate;
+}
+@media (max-width: 620px) {
+  .theme-dial {
+    display: none;
+  }
+}
+.theme-dial__circle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid;
+  border-radius: 50%;
+  cursor: pointer;
+  mix-blend-mode: screen;
+  /* Dimmed until active/hovered — a fixed color key (each circle always
+     shows its own period's color, not whichever theme is currently
+     active), so the "which one is selected" signal is opacity instead of
+     a background swap. box-shadow eases at 0.6s to match .app/.work-links;
+     opacity is a UI affordance, not a themed color, so it can be snappier. */
+  opacity: 0.6;
+  transition: opacity 0.2s ease, box-shadow 0.6s ease;
+}
+/* Four circles on the diamond's points: neighbours overlap, opposite ones
+   just touch. Each fill is that theme's foreground colour, as a literal —
+   not var(--grey-200) etc., which is redefined per [data-color-theme] and
+   would shift the key with whichever theme is active. Each circle also has a 2px
+   stroke (inside its 20px box): cyan, magenta and yellow use their own family's 900 step,
+   grey uses grey-100. The grey ramp is remapped per theme, so grey-100 is a literal too,
+   while cyan/magenta/yellow-900 aren't remapped. */
+.theme-dial__circle--grey {
+  top: 0;
+  left: 10px;
+  background: #e3e3e5;
+  border-color: #ffffff;
+}
+.theme-dial__circle--cyan {
+  top: 10px;
+  right: 0;
+  background: #00fff2;
+  border-color: var(--cyan-900, #005955);
+}
+.theme-dial__circle--magenta {
+  bottom: 0;
+  left: 10px;
+  background: #ff00ff;
+  border-color: var(--magenta-900, #560059);
+}
+.theme-dial__circle--yellow {
+  top: 10px;
+  left: 0;
+  background: #ffea00;
+  border-color: var(--yellow-900, #595200);
+}
+.theme-dial__circle:hover {
+  opacity: 0.85;
+}
+/* A focused circle is at full strength, and above its neighbours, so the ring around it (the
+   site-wide one) isn't dimmed by the 60% opacity. */
+.theme-dial__circle:focus-visible {
+  opacity: 1;
+  z-index: 1;
+}
+.theme-dial__circle--active,
+.theme-dial__circle--active:hover {
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--text-emphasis, #ffffff);
+}
+.coffee {
+  /* Matches .site-header__logo-text / .site-header__logo-word — every
+     nav element reads at the same size now. */
+  font-size: var(--text-body);
+  line-height: 1.3;
+  color: var(--font-100, #ffffff);
+}
+/* The roast name is plain text (the Coffee page is hidden), one step down from the label above. */
+.coffee__detail {
+  color: var(--font-300, #ceced3);
+}
+
+/* ── Logo (lives inside .work-links now, see SiteNav.jsx) ── */
+.site-header__logo-link {
+  grid-column: 1;
+  text-decoration: none;
+}
+.site-header__logo-text {
+  font-size: var(--text-body);
+  color: var(--font-100, #ffffff);
+}
+/* "Trent Lutmer" links to the homepage but reads as it did before: no underline and no colour of
+   its own (the hover is the wipe swap below). */
+.site-header__name-link {
+  color: inherit;
+  text-decoration: none;
+}
+/* "Trent Lutmer" wipes into its Korean transliteration while the name is hovered, and
+   back on mouse-out (see ChromaWipeSwap). Every layer sits in one grid cell, so the box
+   is the wider of the two texts and the 3 x 3 cells are mapped onto it. */
+.wipe-swap {
+  display: inline-block;
+}
+
+.wipe-swap__visual {
+  display: grid;
+}
+
+.wipe-swap__base,
+.wipe-swap__cell {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+
+/* Hidden until the motion (or reduced-motion swap) shows them. */
+.wipe-swap__base--alt {
+  visibility: hidden;
+}
+
+.wipe-swap__cell {
+  display: none;
+}
+
+.site-header__logo-words {
+  display: flex;
+  gap: 6px;
+}
+/* The ✦ between Work and Info — decorative, in the same colour as an inactive link. */
+.site-header__logo-sep {
+  font-size: var(--text-body);
+  color: var(--font-300, #ceced3);
+  user-select: none;
+}
+
+.site-header__logo-word {
+  font-size: var(--text-body);
+  /* Set to transparent, not none — text-decoration-color is what
+     actually animates on hover below; text-decoration-line itself can't
+     transition, so toggling underline on/off directly would still snap
+     instantly no matter what transition-duration says. */
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  color: var(--font-300, #ceced3);
+  transition: color 0.2s ease, text-decoration-color 0.6s ease;
+}
+/* Keyboard focus reads like hover — the 100 step and the underline — as well as the site-wide
+   ring (see :focus-visible in index.css). The footer's links use these same rules. */
+.site-header__logo-word:hover,
+.site-header__logo-word:focus-visible {
+  color: var(--font-100, #ffffff);
+  text-decoration-color: currentColor;
+}
+.site-header__logo-word:active {
+  color: var(--text-pressed, #e3e3e5);
+}
+.site-header__logo-word--selected {
+  color: var(--font-100, #ffffff);
+  text-decoration: underline;
+}
+
+.work-links {
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-regular);
+  padding: 1rem 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* v2's .about container: nav + headline share a 1540px-max column with 2rem
+   side padding; the nav escapes that padding (negative margin) so its bar
+   reaches the container edges, and its own top-row padding puts the logo back
+   at the same left edge as the headline below. */
+.site-shell {
+  width: 100%;
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 2rem 2rem 0;
+  --page-inset: 2rem;
+}
+.site-shell .work-links {
+  margin-left: calc(-1 * var(--page-inset, 2rem));
+  margin-right: calc(-1 * var(--page-inset, 2rem));
+}
+
+/* All page content — headline, bento, roast grid, project pages — sits in one
+   centered 800px column (the nav above stays full width). */
+.content {
+  width: 100%;
+  max-width: 800px;
+  margin-inline: auto;
+}
+
+/* Work page headline block (v2 .about__card--work). */
+.about__card--work {
+  padding: 20rem 0 3rem;
+}
+.about__body-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .site-shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    --page-inset: 1rem;
+  }
+  .work-links {
+    padding-bottom: 24px;
+  }
+  /* Coffee status drops below the nav links and spans the full nav width. */
+  .site-header__top-row {
+    grid-template-columns: 1fr;
+    padding: 0 1rem;
+  }
+  .site-header__status {
+    grid-column: 1;
+    justify-self: stretch;
+    width: 100%;
+    padding: 2rem 0;
+  }
+  .theme-dial {
+    grid-column: 1;
+    justify-self: end;
+  }
+}
+
+/* Skip link (see Layout.jsx): off-screen until it takes keyboard focus. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  z-index: 1001;
+  padding: 0.5rem 1rem;
+  border: 1px solid currentColor;
+  background: var(--theme-bg, #000000);
+  color: var(--font-100, #ffffff);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  line-height: 1.3;
+  text-decoration: none;
+  transform: translateY(-150%);
+}
+.skip-link:focus-visible {
+  transform: translateY(1rem);
+}
+/* The skip link's target is focused by script, not by the user — no ring around the whole page. */
+#main-content:focus {
+  outline: none;
+}
+
+/* Footer (see SiteFooter.jsx) — it reuses the nav's grid row: the copyright in the first column,
+   the links in the second, placed as .site-header__status places "Currently sipping" (same
+   alignment and 5.25rem inset, so they start on the same left edge; the link and ✦ styles are the
+   nav's own .site-header__logo-word / -sep). The hidden sizer is a copy of the longer status line,
+   so this auto-width column is as wide as the nav's. On a phone they stack, as the nav does. */
+.site-footer__copy {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  /* As wide as "Trent Lutmer" above (12 monospace characters), the least the nav's first column
+     can shrink to — so on a narrow window this column, and the links after it, still match. */
+  min-width: 12ch;
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.3;
+  color: var(--font-300, #ceced3);
+}
+.site-footer__links-col {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  text-align: left;
+  padding-left: 5.25rem;
+}
+.site-footer__links {
+  flex-wrap: wrap;
+}
+.site-footer__sizer {
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  white-space: nowrap;
+  font-size: var(--text-body);
+}
+@media (max-width: 600px) {
+  .site-footer__copy,
+  .site-footer__links-col {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .site-footer__links-col {
+    justify-self: stretch;
+    padding: 0 0 1rem;
+  }
+  .site-footer__sizer {
+    display: none;
+  }
+}
+
+/* v2's .about is a flex column with a 24px gap between the nav and main. */
+.site-shell--body {
+  padding-top: 24px;
+}
+
+/* Bottom of a page whose last section is a card grid. */
+.site-shell--end {
+  padding-top: 24px;
+  padding-bottom: clamp(3rem, 8vw, 6rem);
+}
+
+/* Headline block at the top of the Coffee ("Daily driver" + brew recipe) and Info pages. */
+.about__card--page {
+  padding: 6rem 0 3rem;
+}
+.about__brew-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  color: var(--text, #e3e3e5);
+  font-size: var(--text-body);
+  line-height: 1.3;
+}
+
+/* ── Project pages (ported from v2's ProjectShowcase) ── */
+.project {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-top: 6rem;
+}
+
+/* A card plus its caption — tighter than the gap between items. */
+.project__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.work-project__copy {
+  padding-inline: 16px;
+}
+
+/* Bullet-list alternative to .work-project__copy — same inset, one feature per line. */
+.work-project__list {
+  margin: 0;
+  padding: 0 16px 0 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text, #e3e3e5);
+  font-size: var(--text-body);
+  line-height: 1.3;
+}
+
+.about__inline-link {
+  color: var(--text, #e3e3e5);
+  text-decoration: underline;
+}
+
+/* ── Case-study pages (components/CaseStudy: Carbon, IBM SaaS Console) ──
+   Text blocks between the image cards: the same 16px inset as .work-project__copy, a tighter
+   rhythm inside a block than between blocks (.project's 2.5rem). */
+.case__hero,
+.case__section,
+.case__text,
+.case__fact {
+  display: flex;
+  flex-direction: column;
+}
+.case__hero {
+  gap: 1rem;
+  padding-inline: 16px;
+}
+.case__lead {
+  color: var(--text, #e3e3e5);
+}
+.case__section {
+  gap: 1.5rem;
+}
+.case__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-inline: 16px;
+}
+.case__subhead {
+  color: var(--text-muted, #ceced3);
+}
+.case__text {
+  gap: 1rem;
+}
+.case__facts {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+  gap: 2.5rem;
+  padding-inline: 16px;
+}
+.case__fact {
+  gap: 1rem;
+}
+@media (max-width: 600px) {
+  .case__facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Bulleted lists — the source used a literal "✶" for each bullet; here it is the marker. */
+.case__list {
+  margin: 0;
+  padding: 0 16px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text, #e3e3e5);
+  font-size: var(--text-body);
+  line-height: 1.3;
+}
+.case__facts .case__list {
+  padding-inline: 0;
+}
+.case__list li {
+  display: flex;
+  gap: 0.75rem;
+}
+.case__list li::before {
+  content: '✶';
+  flex: none;
+}
+
+.project-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+}
+
+.project-nav__link {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-body);
+  color: var(--text, #e3e3e5);
+  text-decoration: underline;
+}
+
+/* Page-wide chroma wipe (see ThemeTransition.jsx): a fixed 3 x 3 grid of solid cells over
+   the viewport, hidden until the effect shows them. */
+.theme-transition__cells {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  pointer-events: none;
+}
+.theme-transition__cell {
+  display: none;
+}

@@ -1,0 +1,511 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--grey-900, #000000);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100dvh;
+  color: var(--text, #e3e3e5);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan-300, #00fff2);
+  outline-offset: 3px;
+}
+
+/* ── Bento ──
+   Six cards on the Figma frame's 3-column x 4-row grid of square cells:
+
+       a a b        a  wide (2x1)        b  tall (1x2)
+       c c b        c  large (2x2)       d  small (1x1)
+       c c d        e  small (1x1)       f  wide (2x1)
+       e f f
+
+   Each card's silhouette is a generated clip-path (card-shapes.css) whose
+   chamfers scale with --k, "one design px at the current layout size":
+   --k is min(1px, cell / 347) — 347 being the Figma cell — so the shapes
+   are pixel-true at full size and shrink proportionally with the cells
+   instead of distorting. `.bento-wrap` is the size container, so the layout
+   responds to its own width, not the viewport.
+
+   Below 760px the cells re-flow to 2 columns; below 480px to a single
+   column with per-card aspect ratios (the shapes still scale by --k). */
+@property --k {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 1px;
+}
+
+.bento-wrap {
+  container-type: inline-size;
+  container-name: bento;
+}
+
+.bento {
+  --gap: 2.5rem;
+  --unit: calc((100cqw - 2 * var(--gap)) / 3);
+  --k: min(1px, calc(var(--unit) / 347));
+  --card-fill: var(--grey-900, #000000);
+  --card-edge: var(--grey-200, #e3e3e5);
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: var(--unit);
+  grid-template-areas:
+    'a a b'
+    'c c b'
+    'c c d'
+    'e f f';
+  gap: var(--gap);
+}
+
+.card {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* The Info page's arrangement: small + wide, text + tall, wide + small. Same six
+   cells (a–f), so the same shape boxes apply — only the placement differs. */
+.bento--info {
+  grid-template-areas:
+    'd a a'
+    'c c b'
+    'c c b'
+    'f f e';
+}
+
+/* Placement is bento-only: the same .card--a–f classes also supply silhouettes
+   to the coffee grid, which flows freely and must not inherit these areas. */
+.bento .card--a { grid-area: a; }
+.bento .card--b { grid-area: b; }
+.bento .card--c { grid-area: c; }
+.bento .card--d { grid-area: d; }
+.bento .card--e { grid-area: e; }
+.bento .card--f { grid-area: f; }
+
+/* Outline layer: the full silhouette in the edge color. */
+.card__frame {
+  position: absolute;
+  inset: 0;
+  background: var(--card-edge);
+  clip-path: var(--shape);
+}
+
+/* Fill layer: the same silhouette inset 1px — what's left of the frame
+   around it is the 1px stroke. Holds the media and the text. */
+.card__inner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--card-fill);
+  clip-path: var(--shape-inner);
+}
+
+/* Before a card's reveal plays (see BentoCard), both layers are hidden; the
+   effect drives their opacity from there, then hands over to the resting state. */
+.card[data-reveal='pending'] .card__frame,
+.card[data-reveal='pending'] .card__ring,
+.card[data-reveal='pending'] .card__inner {
+  opacity: 0;
+}
+
+/* The card's 1px border, drawn again on top of the media. The frame under the picture is the
+   border too, but the picture — above all the effect's WebGL canvas, which the browser snaps to
+   whole pixels while a card can sit at a fractional position — can paint over part of it. The ring
+   is the same silhouette with the inner one cut out (--shape-ring, see lib/randomShape.js), so it
+   lines up with the frame exactly and nothing sits above it. */
+.card__ring {
+  position: absolute;
+  inset: 0;
+  background: var(--card-edge);
+  clip-path: var(--shape-ring);
+  pointer-events: none;
+}
+
+/* The outline that draws itself during the reveal — sized to the card, its
+   viewBox set to the card's pixel size so 1 unit = 1px. */
+.card__stroke {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--card-edge, #e3e3e5);
+}
+
+/* A framed picture (BentoCard's `inset` + `ratio`): the box the media fills, centred vertically;
+   its left, right and aspect-ratio come from the card's props. */
+.card__media-box {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.card__media {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The pixel portrait is black-on-white; a white card fill lets it sit edge to
+   edge without a visible box. */
+.card--illustration {
+  --card-fill: #ffffff;
+}
+
+/* Padding clears the corner chamfers and notch depths (up to ~55 design px),
+   scaled with the shapes. */
+.card__text {
+  position: absolute;
+  isolation: isolate;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: calc(22 * var(--k) + 12px) calc(26 * var(--k) + 12px);
+}
+
+.card__title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--text, #e3e3e5);
+}
+
+/* Text over a picture or video stays white in every theme — a literal color, not the themed
+   text ramp, which needn't be light against the picture. Blank cards keep the themed color:
+   they sit on the themed card fill. */
+.card--media .card__title {
+  color: #ffffff;
+}
+
+/* The Work page's own text (the headline and the card titles) is the theme's 300 step. The nav
+   has its own colours (see site-nav.css). */
+.home .about__headline,
+.home .card .card__title {
+  color: var(--font-300, #ceced3);
+}
+
+/* A card title sits on a chip of grey-900 at 64% (the theme's page colour in the coloured
+   themes); the negative margin cancels the padding so the text stays where it was.
+
+   Hovering (or keyboard-focusing) the card plays the "shuffle" motion over the whole caption:
+   stepped frames, no tweening — empty, then a box with an X (270ms), a solid block with warning
+   marks (400ms), diagonal stripes (530ms) and finally solid (670ms), where it stays. The chip's
+   ::before draws the frames; the text flips between the theme's 300 and 900 steps so it reads
+   on each. steps(1, end) holds every keyframe until the next one. */
+.home .card .card__title {
+  --shuffle-fg: var(--font-300, #ceced3);
+  --shuffle-bg: var(--grey-900, #000000);
+  position: relative;
+  isolation: isolate;
+  align-self: flex-start;
+  padding: 2px 6px;
+  margin: -2px -6px;
+  background: color-mix(in srgb, var(--shuffle-bg) 64%, transparent);
+}
+
+.home .card .card__title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.home .card:hover .card__title,
+.home .card:focus-visible .card__title {
+  animation: caption-shuffle-text 670ms steps(1, end) forwards;
+}
+
+.home .card:hover .card__title::before,
+.home .card:focus-visible .card__title::before {
+  animation: caption-shuffle 670ms steps(1, end) forwards;
+}
+
+@keyframes caption-shuffle {
+  0% {
+    background: none;
+    box-shadow: none;
+  }
+  /* 270ms — an outlined box with an X through it */
+  40.299% {
+    background:
+      linear-gradient(to top right, transparent calc(50% - 1px), var(--shuffle-fg) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+      linear-gradient(to bottom right, transparent calc(50% - 1px), var(--shuffle-fg) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
+    box-shadow: inset 0 0 0 2px var(--shuffle-fg);
+  }
+  /* 400ms — a solid block with an exclamation mark cut out of it */
+  59.701% {
+    background:
+      linear-gradient(var(--shuffle-bg), var(--shuffle-bg)) 50% calc(50% - 3.5px) / 3px 11px no-repeat,
+      linear-gradient(var(--shuffle-bg), var(--shuffle-bg)) 50% calc(50% + 6.5px) / 3px 3px no-repeat,
+      var(--shuffle-fg);
+    box-shadow: none;
+  }
+  /* 530ms — 2px diagonal stripes, 13px apart */
+  79.104% {
+    background: repeating-linear-gradient(135deg, transparent 0 7.2px, var(--shuffle-fg) 7.2px 9.2px);
+    box-shadow: none;
+  }
+  /* 670ms — solid, and it stays */
+  100% {
+    background: var(--shuffle-fg);
+    box-shadow: none;
+  }
+}
+
+@keyframes caption-shuffle-text {
+  0%,
+  40.299%,
+  79.104% {
+    color: var(--shuffle-fg);
+  }
+  59.701%,
+  100% {
+    color: var(--shuffle-bg);
+  }
+}
+
+/* No motion: hovering goes straight to the solid end state. */
+@media (prefers-reduced-motion: reduce) {
+  .home .card:hover .card__title,
+  .home .card:focus-visible .card__title {
+    animation: none;
+    color: var(--shuffle-bg);
+  }
+  .home .card:hover .card__title::before,
+  .home .card:focus-visible .card__title::before {
+    animation: none;
+    background: var(--shuffle-fg);
+  }
+}
+
+@container bento (max-width: 759px) {
+  .bento {
+    --unit: calc((100cqw - var(--gap)) / 2);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'a a'
+      'b d'
+      'b e'
+      'c c'
+      'c c'
+      'f f';
+  }
+}
+
+@container bento (max-width: 759px) {
+  .bento--info {
+    grid-template-areas:
+      'a a'
+      'b d'
+      'b e'
+      'c c'
+      'c c'
+      'f f';
+  }
+}
+
+@container bento (max-width: 479px) {
+  .bento {
+    --k: min(1px, calc(100cqw / 600));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    grid-auto-rows: auto;
+  }
+
+  .bento .card--a,
+  .bento .card--b,
+  .bento .card--c,
+  .bento .card--d,
+  .bento .card--e,
+  .bento .card--f {
+    grid-area: auto;
+  }
+
+  .card--a,
+  .card--f { aspect-ratio: 16 / 10; }
+  .card--b { aspect-ratio: 3 / 4; }
+  .card--c,
+  .card--d,
+  .card--e { aspect-ratio: 1 / 1; }
+}
+
+/* Info page on a phone: only the text card (c) stays — the pictures and blank cards are hidden. The
+   grid becomes one plain column, because the bento's named areas would otherwise still reserve a
+   fixed-height row for each hidden card. */
+@media (max-width: 600px) {
+  .bento--info {
+    --k: min(1px, calc(100cqw / 600));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    grid-auto-rows: auto;
+  }
+
+  .bento--info .card:not(.card--c) {
+    display: none;
+  }
+
+  .bento--info .card--c {
+    grid-area: auto;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+/* ── Coffee roast grid ──
+   Same outlined cards as the bento, in a plain grid: 4 columns, then 2, then 1
+   as its own width narrows. --k is derived from the card width the same way
+   (min(1px, card / 347)) so the chamfers scale with the cards, and the photos
+   are 2:3 portraits, so the cards are 3:4. On phones it gets the same 40px
+   side padding as the bento. */
+.roasts-wrap {
+  container-type: inline-size;
+  container-name: roasts;
+}
+
+@media (max-width: 600px) {
+  .roasts-wrap {
+    padding-inline: 40px;
+  }
+}
+
+.roasts {
+  --gap: 2.5rem;
+  --cols: 4;
+  --unit: calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols));
+  --k: min(1px, calc(var(--unit) / 347));
+  --card-fill: var(--grey-900, #000000);
+  --card-edge: var(--grey-200, #e3e3e5);
+
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.roasts .card {
+  aspect-ratio: 3 / 4;
+}
+
+@container roasts (max-width: 899px) {
+  .roasts {
+    --cols: 2;
+  }
+}
+
+@container roasts (max-width: 479px) {
+  .roasts {
+    --cols: 1;
+  }
+}
+
+/* A card that is a router link (the Fartlek and Kelex cards on Home). */
+.card--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* A project-page card that opens its picture in the lightbox: a <button> with the browser's
+   button chrome removed. */
+.card--zoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  appearance: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: zoom-in;
+}
+
+/* Project-page cards are plain rectangles: no generated silhouette (--shape is never set), the
+   frame is the whole box and the fill sits 1px inside it, leaving the same 1px outline. With
+   no outline path to draw, the reveal is a fade. */
+.card--plain .card__frame,
+.card--plain .card__inner {
+  clip-path: none;
+  transition: opacity 0.4s ease-out;
+}
+
+.card--plain .card__inner {
+  inset: 1px;
+}
+
+/* ── Project pages ──
+   One plain (unmasked) media card per item — 16:9 unless the card sets its own aspect ratio. */
+.project-media .card {
+  --card-fill: var(--grey-900, #000000);
+  --card-edge: var(--grey-200, #e3e3e5);
+  aspect-ratio: 16 / 9;
+}
+
+/* A text-only card: the paragraphs sit centered in the card, clear of the corner
+   chamfers and notch depths. Themed color — it sits on the themed fill.
+   `.card__sizer` is an invisible in-flow copy of the same text with the same
+   padding: the visible copy is absolutely positioned (so it can fill the card's
+   shape), which alone would give the card no height of its own. With the sizer
+   the card is never shorter than its text — a no-op wherever the cell is already
+   taller (the desktop bento), but it stops a long paragraph overflowing a short
+   card on a phone. */
+.card--text {
+  min-height: auto;
+}
+
+/* Side padding clears the deepest edge notch in the Figma outlines (~38 design px);
+   top/bottom only needs to clear a chamfer or a shallower notch. */
+.card__body,
+.card__sizer {
+  padding: calc(24 * var(--k) + 12px) calc(44 * var(--k) + 12px);
+  font-family: var(--font-mono);
+  font-size: var(--text-body);
+  line-height: 1.3;
+}
+
+.card__body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1em;
+  color: var(--text, #e3e3e5);
+}
+
+.card__body p,
+.card__sizer p {
+  margin: 0;
+}
+
+.card__sizer {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  visibility: hidden;
+  pointer-events: none;
+}
