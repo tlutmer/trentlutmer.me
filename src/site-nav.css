@@ -21,6 +21,9 @@
    A second pair sits on the theme family's own 100 and 300 steps (grey: grey-100 / grey-300):
      --font-100  "Trent Lutmer", "Currently sipping", the selected/hovered Work or Info, a hovered link in a card
      --font-300  Work / Info when not selected, the ✦, the roast name, the Work page's headline and card titles
+   --nav-text  The nav's and footer's quiet text (Work / Info when not selected, the ✦, the Equalizer line,
+               the footer's links and copyright): the 300 step in every theme except grey, where it is grey-400
+               (6.9:1 on grey-700). Unset, it falls back to --font-300.
    The one exception is magenta's muted text: magenta-400 is too dark on magenta-900 to read
    (3.3:1), so it stays on the 300 (4.3:1). Everything else is 5:1 or better.
 
@@ -40,6 +43,7 @@
   --text-pressed: var(--grey-200);
   --font-100: var(--grey-100);
   --font-300: var(--grey-300);
+  --nav-text: var(--grey-400);
 }
 [data-color-theme="cyan"] {
   --theme-fg: var(--cyan-300);
@@ -53,7 +57,9 @@
 }
 [data-color-theme="magenta"] {
   --theme-fg: var(--magenta-300);
-  --theme-bg: var(--magenta-900);
+  /* Magenta-900 (#560059) under the magenta text is 4.34:1, just under WCAG AA's 4.5:1 for body
+     text; a tenth darker is 4.7:1 and still reads as the same deep magenta. */
+  --theme-bg: color-mix(in srgb, var(--magenta-900) 90%, #000000);
   --text: var(--magenta-300);
   --text-emphasis: var(--magenta-200);
   --text-muted: var(--magenta-300);
@@ -86,123 +92,113 @@
 }
 
 /* ── Status (now lives inside .about__body-wrap, see About.jsx) ── */
-/* ── Top row (logo left, coffee status right, see SiteNav.jsx) ── */
+/* ── Top row (logo left, dial right, see SiteNav.jsx) ──
+   .work-links (this row's parent) spans the full viewport edge to edge with no padding of its own,
+   so this row's own padding is what keeps its content off the actual screen edge; inside that, its
+   content is the same 800px column as everything else (.content, also shared with the footer's own
+   row) — logo and dial sit at that column's own edges, not the viewport's. The coffee status used
+   to sit between them; it now lives in the fixed footer, bottom left — see SiteFooter.jsx. */
 .site-header__top-row {
-  display: grid;
-  grid-template-columns: 1.5fr auto 3.5fr;
-  align-items: center;
+  /* 24px lines (16px x 1.5): the stacked name / Work / Info links are each a 24px-tall target that
+     doesn't overlap the next (WCAG 2.5.8). */
+  line-height: 1.5;
   width: 100%;
-  /* .work-links (this row's parent) now spans the full viewport edge to
-     edge with no padding of its own, so this is what keeps the logo/
-     coffee-status/dial off the actual screen edge. */
   padding: 0 2rem;
 }
-.site-header__status {
-  grid-column: 2;
-  justify-self: center;
+.site-header__row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.site-header__left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+/* The coffee status sits at the top right, in the nav's row, at the label size, its own text left-aligned. */
+.site-header__coffee {
+  margin: 0 0 0 auto;
   text-align: left;
-  padding-left: 5.25rem;
-}
-/* Theme dial (see ThemeDial.jsx) — top right of the nav, third column of the
-   same grid row as the logo/coffee status. A 4-circle Venn diagram; each
-   circle is a real <button>, absolutely positioned and overlapping its
-   neighbors; `mix-blend-mode` (plus `isolation` on the container, so the
-   blending stays within this group instead of reacting to whatever's
-   behind the nav) lets the overlaps read as tinted intersections instead
-   of one circle just occluding another. Clicking a circle switches to that
-   theme (see the [data-color-theme] rules; ThemeTransition.jsx plays its effect
-   over the page while the change is applied). */
-.theme-dial {
-  grid-column: 3;
-  justify-self: end;
-  position: relative;
-  width: 40px;
-  height: 40px;
-  isolation: isolate;
-}
-@media (max-width: 620px) {
-  .theme-dial {
-    display: none;
-  }
-}
-.theme-dial__circle {
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  margin: 0;
-  padding: 0;
-  border: 2px solid;
-  border-radius: 50%;
-  cursor: pointer;
-  mix-blend-mode: screen;
-  /* Dimmed until active/hovered — a fixed color key (each circle always
-     shows its own period's color, not whichever theme is currently
-     active), so the "which one is selected" signal is opacity instead of
-     a background swap. box-shadow eases at 0.6s to match .app/.work-links;
-     opacity is a UI affordance, not a themed color, so it can be snappier. */
-  opacity: 0.6;
-  transition: opacity 0.2s ease, box-shadow 0.6s ease;
-}
-/* Four circles on the diamond's points: neighbours overlap, opposite ones
-   just touch. Each fill is that theme's foreground colour, as a literal —
-   not var(--grey-200) etc., which is redefined per [data-color-theme] and
-   would shift the key with whichever theme is active. Each circle also has a 2px
-   stroke (inside its 20px box): cyan, magenta and yellow use their own family's 900 step,
-   grey uses grey-100. The grey ramp is remapped per theme, so grey-100 is a literal too,
-   while cyan/magenta/yellow-900 aren't remapped. */
-.theme-dial__circle--grey {
-  top: 0;
-  left: 10px;
-  background: #e3e3e5;
-  border-color: #ffffff;
-}
-.theme-dial__circle--cyan {
-  top: 10px;
-  right: 0;
-  background: #00fff2;
-  border-color: var(--cyan-900, #005955);
-}
-.theme-dial__circle--magenta {
-  bottom: 0;
-  left: 10px;
-  background: #ff00ff;
-  border-color: var(--magenta-900, #560059);
-}
-.theme-dial__circle--yellow {
-  top: 10px;
-  left: 0;
-  background: #ffea00;
-  border-color: var(--yellow-900, #595200);
-}
-.theme-dial__circle:hover {
-  opacity: 0.85;
-}
-/* A focused circle is at full strength, and above its neighbours, so the ring around it (the
-   site-wide one) isn't dimmed by the 60% opacity. */
-.theme-dial__circle:focus-visible {
-  opacity: 1;
-  z-index: 1;
-}
-.theme-dial__circle--active,
-.theme-dial__circle--active:hover {
-  opacity: 1;
-  box-shadow: 0 0 0 1px var(--text-emphasis, #ffffff);
-}
-.coffee {
-  /* Matches .site-header__logo-text / .site-header__logo-word — every
-     nav element reads at the same size now. */
-  font-size: var(--text-body);
-  line-height: 1.3;
   color: var(--font-100, #ffffff);
 }
-/* The roast name is plain text (the Coffee page is hidden), one step down from the label above. */
+/* The same size as the name and the links beside it (--text-body), not the label size. */
+.site-header__coffee.type--label {
+  font-size: var(--text-body);
+}
+/* Theme dial (see ThemeDial.jsx): four square petals tiled edge to edge into one diamond, at the
+   left of the nav's row, with a black hub where they meet. Each petal is a real <button> filled with
+   that theme's colour (a fixed key, not the current theme). The grid lays the petals out square
+   (top-left, top-right, bottom-left, bottom-right); the container's constant 45deg rotation turns
+   that square into the diamond, carrying top-left to the top, top-right to the right, bottom-right
+   to the bottom and bottom-left to the left. The current theme is always at the top: picking another
+   turns the diamond a further 90deg per step (the transition on the dial's transform). Clicking a
+   petal switches to that theme (see the [data-color-theme] rules; ThemeTransition.jsx plays its
+   effect over the page). */
+.theme-dial {
+  display: grid;
+  grid-template-columns: repeat(2, 1rem);
+  grid-template-rows: repeat(2, 1rem);
+  grid-template-areas:
+    'tl tr'
+    'bl br';
+  gap: 2px;
+  flex: none;
+  position: relative;
+  transition: transform 0.4s ease;
+}
+.theme-dial__dot {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--dot);
+  cursor: pointer;
+}
+/* Fixed white, not var(--grey-100): that token gets remapped to the active accent on cyan/magenta/
+   yellow themes (so other components reskin with the theme), which would make this petal match
+   whichever accent is picked instead of staying white. */
+.theme-dial__dot--grey { --dot: #ffffff; }
+.theme-dial__dot--cyan { --dot: var(--cyan-300); }
+.theme-dial__dot--magenta { --dot: var(--magenta-300); }
+.theme-dial__dot--yellow { --dot: var(--yellow-300); }
+/* The hub sits centred where all four petals meet, same square-then-rotated treatment as the petals. */
+.theme-dial__hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(0.5rem + 4px);
+  height: calc(0.5rem + 4px);
+  transform: translate(-50%, -50%);
+  background: var(--grey-900);
+  pointer-events: none;
+}
+
+/* The page-wide scanner (components/ScannerEffect) covers the whole viewport on a theme change. */
+.scanner-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  pointer-events: none;
+}
+/* The roast name links out to the product page — the nav's own link treatment (underline on hover
+   and keyboard focus, colour steps up to --font-100). */
 .coffee__detail {
-  color: var(--font-300, #ceced3);
+  color: var(--nav-text, var(--font-300, #ceced3));
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: color 0.2s ease, text-decoration-color 0.6s ease;
+}
+.coffee__detail:hover,
+.coffee__detail:focus-visible {
+  color: var(--font-100, #ffffff);
+  text-decoration-color: currentColor;
 }
 
 /* ── Logo (lives inside .work-links now, see SiteNav.jsx) ── */
 .site-header__logo-link {
-  grid-column: 1;
   text-decoration: none;
 }
 .site-header__logo-text {
@@ -214,6 +210,8 @@
 .site-header__name-link {
   color: inherit;
   text-decoration: none;
+  /* Its own box, one 24px line tall (the header's line-height), so it is a 24px target (WCAG 2.5.8). */
+  display: inline-block;
 }
 /* "Trent Lutmer" wipes into its Korean transliteration while the name is hovered, and
    back on mouse-out (see ChromaWipeSwap). Every layer sits in one grid cell, so the box
@@ -236,19 +234,72 @@
 .wipe-swap__base--alt {
   visibility: hidden;
 }
+/* Once the wipe has finished with the other language, it stays swapped: the root's data-lang says which. */
+.wipe-swap[data-lang='alt'] .wipe-swap__base {
+  visibility: hidden;
+}
+.wipe-swap[data-lang='alt'] .wipe-swap__base--alt {
+  visibility: visible;
+}
 
 .wipe-swap__cell {
   display: none;
 }
+/* While a wipe runs the whole-word layers step aside for the cells (each shows, tinted, once the
+   wipe reaches it — BentoCard-style data attributes, not inline styles). */
+.wipe-swap[data-wiping] .wipe-swap__base,
+.wipe-swap[data-wiping] .wipe-swap__base--alt {
+  visibility: hidden;
+}
+.wipe-swap__cell[data-show] {
+  display: block;
+}
+.wipe-swap__cell[data-tone='red'] {
+  color: var(--red-300);
+}
+.wipe-swap__cell[data-tone='green'] {
+  color: var(--green-300);
+}
+.wipe-swap__cell[data-tone='blue'] {
+  color: var(--blue-300);
+}
+/* Each cell is a window onto one ninth of the name's box. */
+.wipe-swap__cell[data-cell='0'] {
+  clip-path: inset(0 calc(100% / 3 * 2) calc(100% / 3 * 2) 0);
+}
+.wipe-swap__cell[data-cell='1'] {
+  clip-path: inset(0 calc(100% / 3 * 1) calc(100% / 3 * 2) calc(100% / 3 * 1));
+}
+.wipe-swap__cell[data-cell='2'] {
+  clip-path: inset(0 0 calc(100% / 3 * 2) calc(100% / 3 * 2));
+}
+.wipe-swap__cell[data-cell='3'] {
+  clip-path: inset(calc(100% / 3 * 1) calc(100% / 3 * 2) calc(100% / 3 * 1) 0);
+}
+.wipe-swap__cell[data-cell='4'] {
+  clip-path: inset(calc(100% / 3 * 1) calc(100% / 3 * 1) calc(100% / 3 * 1) calc(100% / 3 * 1));
+}
+.wipe-swap__cell[data-cell='5'] {
+  clip-path: inset(calc(100% / 3 * 1) 0 calc(100% / 3 * 1) calc(100% / 3 * 2));
+}
+.wipe-swap__cell[data-cell='6'] {
+  clip-path: inset(calc(100% / 3 * 2) calc(100% / 3 * 2) 0 0);
+}
+.wipe-swap__cell[data-cell='7'] {
+  clip-path: inset(calc(100% / 3 * 2) calc(100% / 3 * 1) 0 calc(100% / 3 * 1));
+}
+.wipe-swap__cell[data-cell='8'] {
+  clip-path: inset(calc(100% / 3 * 2) 0 0 calc(100% / 3 * 2));
+}
 
 .site-header__logo-words {
   display: flex;
-  gap: 6px;
+  gap: 0.375rem;
 }
 /* The ✦ between Work and Info — decorative, in the same colour as an inactive link. */
 .site-header__logo-sep {
   font-size: var(--text-body);
-  color: var(--font-300, #ceced3);
+  color: var(--nav-text, var(--font-300, #ceced3));
   user-select: none;
 }
 
@@ -260,7 +311,7 @@
      instantly no matter what transition-duration says. */
   text-decoration: underline;
   text-decoration-color: transparent;
-  color: var(--font-300, #ceced3);
+  color: var(--nav-text, var(--font-300, #ceced3));
   transition: color 0.2s ease, text-decoration-color 0.6s ease;
 }
 /* Keyboard focus reads like hover — the 100 step and the underline — as well as the site-wide
@@ -286,66 +337,175 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
-/* v2's .about container: nav + headline share a 1540px-max column with 2rem
-   side padding; the nav escapes that padding (negative margin) so its bar
-   reaches the container edges, and its own top-row padding puts the logo back
-   at the same left edge as the headline below. */
+/* v2's .about container: each page's own content (headline, bento, roast grid, project pages)
+   shares a 1540px-max column with 2rem side padding. The nav (SiteNav.jsx, outside this — see
+   .work-links below) and the footer (SiteFooter.jsx) are both full page width instead, each with
+   their own padding, so this cap is page content only now. */
 .site-shell {
   width: 100%;
-  max-width: 1540px;
+  max-width: 96.25rem;
   margin: 0 auto;
   padding: 2rem 2rem 0;
-  --page-inset: 2rem;
-}
-.site-shell .work-links {
-  margin-left: calc(-1 * var(--page-inset, 2rem));
-  margin-right: calc(-1 * var(--page-inset, 2rem));
 }
 
 /* All page content — headline, bento, roast grid, project pages — sits in one
-   centered 800px column (the nav above stays full width). */
+   centered 800px column (the nav above and the footer below are both full width instead).
+   The nav's own middle grid column (.site-header__top-row) and the footer's own wrapper
+   (.site-footer__row) both cap at this same 50rem, so everything reads as one column. */
 .content {
   width: 100%;
-  max-width: 800px;
+  max-width: 50rem;
   margin-inline: auto;
+}
+
+/* Full-width pages (the Work example and the Fartlek page): `.page--full` on <main>. No page cap, so
+   the body, nav and footer all run edge to edge, with one gutter (fluid, 1rem to 2rem) so their
+   edges line up. The nav and footer sit outside <main>, so they're reached via :has(). */
+.page--full {
+  --gutter: 2rem;
+}
+.page--full .site-shell {
+  max-width: none;
+  padding-inline: 0;
+}
+.page--full .content {
+  max-width: none;
+}
+body:has(.page--full) .site-header__top-row {
+  padding-inline: 0;
+}
+body:has(.page--full) .site-header__row,
+body:has(.page--full) .site-footer__row {
+  max-width: none;
+}
+
+/* Intro headline on the full-width pages (Work and Info): a 40rem measure. */
+.page--full .about__headline {
+  max-width: 40rem;
+}
+
+/* Work and Info: the content (intro and bento) is 8 of the 12 columns, centred, on the same 2rem
+   gutters as the bento. The page, nav and footer stay full width. Below 48rem it's the full width:
+   8 columns on a phone is too narrow. Declared after `.page--full .content` so it wins. */
+.home .content,
+.about .content {
+  width: calc((100% - 11 * var(--gutter)) / 12 * 8 + 7 * var(--gutter));
+  max-width: none;
+}
+@media (max-width: 47.9375rem) {
+  .home .content,
+  .about .content {
+    width: 100%;
+  }
+}
+
+/* Project pages (components/ProjectSplit): the title block, info and copy in the left third, all the
+   media in the right two-thirds, stacked. Stacks to one column below 48rem. */
+.project-split {
+  padding-top: 6rem;
+}
+.project-split__layout {
+  display: grid;
+  gap: 3rem;
+}
+.project-split__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.project-split__hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.project-split__hero h1 {
+  margin: 0;
+}
+.project-split__media {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+.project-split__info {
+  display: grid;
+  gap: 1.5rem;
+  margin: 0;
+  padding-top: 1.5rem;
+  border-top: 0.0625rem solid var(--font-300, #ceced3);
+}
+.project-split__info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.project-split__info dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  color: var(--font-300, #ceced3);
+}
+.project-split__info dd {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.3;
+  color: var(--text, #e3e3e5);
+}
+@media (min-width: 48rem) {
+  .project-split__layout {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    align-items: start;
+  }
+  .project-split__content {
+    grid-column: 1 / span 4;
+  }
+  /* Sticky left column (ProjectSplit `sticky`): it holds 2rem from the top, and if it is taller than the
+     window (the full case study is open) it scrolls inside itself instead of being cut off. */
+  .project-split__content--sticky {
+    position: sticky;
+    top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    padding-bottom: 2rem;
+  }
+  .project-split__media {
+    grid-column: 5 / span 8;
+  }
 }
 
 /* Work page headline block (v2 .about__card--work). */
 .about__card--work {
   padding: 20rem 0 3rem;
 }
+/* The home hero: 8rem of air above and below the headline block. */
+.home .about__card--work {
+  padding: 8rem 0;
+}
+
 .about__body-wrap {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1rem;
 }
 
-@media (max-width: 600px) {
+/* At 620px and under the dial is already hidden (see .theme-dial's own media query below), leaving
+   the flex row (.site-header__row) with only the logo — it needs no extra rule for that. */
+
+@media (max-width: 37.5rem) {
   .site-shell {
     padding-left: 1rem;
     padding-right: 1rem;
-    --page-inset: 1rem;
   }
   .work-links {
-    padding-bottom: 24px;
+    padding-bottom: 1.5rem;
   }
-  /* Coffee status drops below the nav links and spans the full nav width. */
   .site-header__top-row {
-    grid-template-columns: 1fr;
     padding: 0 1rem;
   }
-  .site-header__status {
-    grid-column: 1;
-    justify-self: stretch;
-    width: 100%;
-    padding: 2rem 0;
-  }
-  .theme-dial {
-    grid-column: 1;
-    justify-self: end;
+  .site-header__coffee {
+    display: none;
   }
 }
 
@@ -356,7 +516,7 @@
   left: 1rem;
   z-index: 1001;
   padding: 0.5rem 1rem;
-  border: 1px solid currentColor;
+  border: 0.0625rem solid currentColor;
   background: var(--theme-bg, #000000);
   color: var(--font-100, #ffffff);
   font-family: var(--font-mono);
@@ -373,76 +533,69 @@
   outline: none;
 }
 
-/* Footer (see SiteFooter.jsx) — it reuses the nav's grid row: the copyright in the first column,
-   the links in the second, placed as .site-header__status places "Currently sipping" (same
-   alignment and 5.25rem inset, so they start on the same left edge; the link and ✦ styles are the
-   nav's own .site-header__logo-word / -sep). The hidden sizer is a copy of the longer status line,
-   so this auto-width column is as wide as the nav's. On a phone they stack, as the nav does. */
+/* Footer (see SiteFooter.jsx) — fixed to the bottom of the viewport at all times (not just once
+   scrolled to the page's end), full page width like the nav above, with 1rem of padding top and
+   bottom always; its left/right padding matches the nav's and the page content's own (2rem, 1rem
+   at 600px and under — see the media query below) so its 800px row lines up with them at every
+   width, not just above 1024px and below 600px. Its own copy of the theme's page colour (like the
+   skip link) at 96% opacity — background only, not the text, so page content shows through it just
+   slightly without touching legibility — and above that content (z-index) but well under the theme
+   wipe and the modal. `body`'s own bottom padding (below) reserves this bar's height so it never
+   covers the last of a page's content. */
+.site-footer {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 2;
+  padding: 1rem 2rem;
+  background: color-mix(in srgb, var(--theme-bg, #000000) 96%, transparent);
+}
+/* One row at every width. Narrow: the copyright left, the audio player right. From 48rem it's the
+   12-column grid the project pages use: the copyright in columns 1–4, the audio player in 5–12. */
+.site-footer__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+@media (min-width: 48rem) {
+  .site-footer__row {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter, 2rem);
+    align-items: end;
+  }
+  .site-footer__row > .site-footer__copy {
+    grid-column: 1 / span 4;
+    grid-row: 1;
+  }
+}
 .site-footer__copy {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: start;
-  /* As wide as "Trent Lutmer" above (12 monospace characters), the least the nav's first column
-     can shrink to — so on a narrow window this column, and the links after it, still match. */
-  min-width: 12ch;
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.3;
-  color: var(--font-300, #ceced3);
-}
-.site-footer__links-col {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: center;
-  text-align: left;
-  padding-left: 5.25rem;
-}
-.site-footer__links {
-  flex-wrap: wrap;
-}
-.site-footer__sizer {
-  display: block;
-  height: 0;
-  overflow: hidden;
-  visibility: hidden;
-  white-space: nowrap;
-  font-size: var(--text-body);
-}
-@media (max-width: 600px) {
-  .site-footer__copy,
-  .site-footer__links-col {
-    grid-column: 1;
-    grid-row: auto;
-  }
-  .site-footer__links-col {
-    justify-self: stretch;
-    padding: 0 0 1rem;
-  }
-  .site-footer__sizer {
-    display: none;
-  }
+  line-height: 1.5;
+  color: var(--nav-text, var(--font-300, #ceced3));
 }
 
 /* v2's .about is a flex column with a 24px gap between the nav and main. */
 .site-shell--body {
-  padding-top: 24px;
+  padding-top: 1.5rem;
 }
 
 /* Bottom of a page whose last section is a card grid. */
 .site-shell--end {
-  padding-top: 24px;
+  padding-top: 1.5rem;
   padding-bottom: clamp(3rem, 8vw, 6rem);
 }
 
-/* Headline block at the top of the Coffee ("Daily driver" + brew recipe) and Info pages. */
+/* Headline block at the top of the Info page. */
 .about__card--page {
   padding: 6rem 0 3rem;
 }
 .about__brew-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 16px 0 0;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
   padding: 0;
   list-style: none;
   text-align: left;
@@ -466,20 +619,53 @@
   gap: 1.5rem;
 }
 
-.work-project__copy {
-  padding-inline: 16px;
-}
-
 /* Bullet-list alternative to .work-project__copy — same inset, one feature per line. */
 .work-project__list {
   margin: 0;
-  padding: 0 16px 0 32px;
+  padding: 0 1rem 0 2rem;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   color: var(--text, #e3e3e5);
   font-size: var(--text-body);
   line-height: 1.3;
+}
+
+.about__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+  /* .type--label gives the 12.8px size; the colour is the page's own text token (the 300 step). */
+  color: var(--font-300, #ceced3);
+}
+.about__links-sep {
+  color: var(--font-300, #ceced3);
+  user-select: none;
+}
+/* A link or the copy button: the 300 step, and the 100 step with an underline on hover / keyboard
+   focus, as the nav's links do. The padding makes each a 24px-tall target (WCAG 2.5.8); the negative
+   margin keeps the row's height. */
+.about__link {
+  margin: -0.25rem 0;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--font-300, #ceced3);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  cursor: pointer;
+  transition: color 0.2s ease, text-decoration-color 0.6s ease;
+}
+.about__link:hover,
+.about__link:focus-visible {
+  color: var(--font-100, #ffffff);
+  text-decoration-color: currentColor;
+}
+.about__link:active {
+  color: var(--text-pressed, #e3e3e5);
 }
 
 .about__inline-link {
@@ -499,7 +685,6 @@
 }
 .case__hero {
   gap: 1rem;
-  padding-inline: 16px;
 }
 .case__lead {
   color: var(--text, #e3e3e5);
@@ -511,7 +696,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  padding-inline: 16px;
 }
 .case__subhead {
   color: var(--text-muted, #ceced3);
@@ -519,29 +703,202 @@
 .case__text {
   gap: 1rem;
 }
-.case__facts {
+/* The hide/show body of a case study (CaseText, used by the Federal Regulations pages): the button is the
+   site's about__link, and the body's copy is the normal paragraph size (16px). */
+.case__disclosure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.case__disclosure-body[hidden] {
+  display: none;
+}
+/* The caret after the button's label; it turns over while the body is open. */
+.case__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.case__caret {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.case__toggle[aria-expanded='true'] .case__caret {
+  transform: rotate(180deg);
+}
+/* Headline results under a project's summary (CaseStudy's Metrics): two columns, the number large
+   and its label small above it. The value comes first visually via order, while the DOM keeps
+   dt-before-dd for screen readers. */
+.case__metrics {
   display: grid;
-  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
-  gap: 2.5rem;
-  padding-inline: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem 1rem;
+  margin: 2.5rem 0 0;
+}
+.case__metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+}
+.case__metric-value {
+  order: -1;
+  margin: 0;
+  color: var(--font-100, #ffffff);
+}
+.case__metric-label {
+  color: var(--text-muted, #ceced3);
+}
+
+/* The rule between a summary (.case__tldr) and the body text, with a wider gap than a paragraph's. */
+.case__rule {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid currentColor;
+}
+/* Anchor targets stop a little below the top of the window instead of touching it. */
+.case__hero,
+.case__section {
+  scroll-margin-top: 2rem;
+}
+
+/* ── Writing page: a sticky "on this page" list in the right gutter ──
+   From 1024px up the list sits in a column to the right of the 800px article, and never above or
+   below it: under 1024px it is left out altogether. The right column is at least 180px wide, so
+   from 1224px up the article is centred exactly as on every other page; between 1024px and 1224px
+   it slides left to make room. (The header and footer are unaffected — both are plain 800px-content
+   bars now, not tied to this page's own wider grid.) */
+.writing {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+.writing__toc {
+  grid-column: 1 / span 4;
+  grid-row: 1;
+}
+.writing > .content {
+  grid-column: 5 / span 8;
+  grid-row: 1;
+}
+/* Level with the article's heading (the article's own padding-top), then it sticks 2rem from the top. */
+/* The "On this page" rail: a 1px line down the left, one segment per link (so the line is continuous).
+   The section being read has a 2px accent segment over the line and its label goes to the top step. */
+.writing-nav {
+  position: sticky;
+  top: 2rem;
+  display: flex;
+  flex-direction: column;
+  margin-top: 6rem;
+}
+.writing-nav__link {
+  position: relative;
+  display: block;
+  padding: 0.375rem 0 0.375rem 1rem;
+  border-left: 0.0625rem solid color-mix(in srgb, var(--font-300, #ceced3) 40%, transparent);
+  font-size: var(--text-label);
+  line-height: 1.3;
+  color: var(--font-300, #ceced3);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.writing-nav__link::before {
+  content: '';
+  position: absolute;
+  left: -0.0625rem;
+  top: 0;
+  bottom: 0;
+  width: 0.125rem;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+/* The h1 (the intro) is the top step of the rail, with a larger label. The h2s sit in a group that
+   steps in from it on a 45-degree notch — the same bend as a chamber's edge. */
+.writing-nav__link--h1 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-size: var(--text-body);
+  color: var(--font-100, #ffffff);
+}
+.writing-nav__group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  margin-left: 1rem;
+  padding-top: 1rem;
+}
+.writing-nav__group::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  top: 0;
+  width: 1rem;
+  height: 1rem;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 0.5px),
+    color-mix(in srgb, var(--font-300, #ceced3) 40%, transparent) calc(50% - 0.5px),
+    color-mix(in srgb, var(--font-300, #ceced3) 40%, transparent) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+/* Hover, keyboard focus and the section being read: the label steps up, and the section being read
+   gets the accent segment on the rail. */
+.writing-nav__link:hover,
+.writing-nav__link:focus-visible,
+.writing-nav__link[aria-current='location'] {
+  color: var(--font-100, #ffffff);
+}
+.writing-nav__link[aria-current='location']::before {
+  background: var(--text-emphasis, var(--font-100, #ffffff));
+}
+.writing-nav__link:hover,
+.writing-nav__link:focus-visible {
+  text-decoration: underline;
+}
+@media (min-width: 64rem) {
+  .writing > .content {
+    max-width: none;
+  }
+}
+@media (max-width: 63.9375rem) {
+  .writing {
+    display: block;
+  }
+  .writing__toc {
+    display: none;
+  }
+}
+
+/* A figure with a caption (components/CaseStudy: Figure) — the caption has the same 16px text inset as the copy. */
+.case__figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+}
+.case__caption {
+  padding-inline: 1rem;
+}
+.case__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 .case__fact {
   gap: 1rem;
 }
-@media (max-width: 600px) {
-  .case__facts {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 
-/* Bulleted lists — the source used a literal "✶" for each bullet; here it is the marker. */
+/* Bulleted lists — the source used a literal "✶" for each bullet; here it is the ✦ marker (see below). */
 .case__list {
   margin: 0;
-  padding: 0 16px;
+  padding: 0 1rem;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   color: var(--text, #e3e3e5);
   font-size: var(--text-body);
   line-height: 1.3;
@@ -549,43 +906,81 @@
 .case__facts .case__list {
   padding-inline: 0;
 }
-.case__list li {
+.case__list li,
+.work-project__list li,
+.about__brew-list li {
   display: flex;
   gap: 0.75rem;
 }
-.case__list li::before {
-  content: '✶';
+/* Every bullet on the site is the four-pointed star the nav's separators use. The `/ ''` gives it an
+   empty text alternative, so a screen reader doesn't read out "black four pointed star". */
+.case__list li::before,
+.work-project__list li::before,
+.about__brew-list li::before {
+  content: '✦';
+  content: '✦' / '';
   flex: none;
-}
-
-.project-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24px 0;
-}
-
-.project-nav__link {
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--text-body);
-  color: var(--text, #e3e3e5);
-  text-decoration: underline;
 }
 
 /* Page-wide chroma wipe (see ThemeTransition.jsx): a fixed 3 x 3 grid of solid cells over
    the viewport, hidden until the effect shows them. */
-.theme-transition__cells {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-  pointer-events: none;
+/* The cell's spectrum step while the wipe shows it (data-step is an index into CHROMA_SPECTRUM). */
+
+/* Page transition (PageTransition.jsx): each frame of the trail effect — the new page's clip window and opacity,
+   worked out from that file's TRAIL_FRAMES (the square is x 112..176 of the original's 64px grid). */
+.page-transition[data-frame='0'] {
+  opacity: 0;
+  clip-path: inset(0 100% 0 100%);
 }
-.theme-transition__cell {
-  display: none;
+.page-transition[data-frame='1'] {
+  opacity: 0.1882;
+  clip-path: inset(0 56.25% 0 0%);
+}
+.page-transition[data-frame='2'] {
+  opacity: 0.1882;
+  clip-path: inset(0 25% 0 0%);
+}
+.page-transition[data-frame='3'] {
+  opacity: 0.3255;
+  clip-path: inset(0 14.0625% 0 0%);
+}
+.page-transition[data-frame='4'] {
+  opacity: 0.4588;
+  clip-path: inset(0 9.375% 0 0%);
+}
+.page-transition[data-frame='5'] {
+  opacity: 0.5922;
+  clip-path: inset(0 6.25% 0 0%);
+}
+.page-transition[data-frame='6'] {
+  opacity: 0.7255;
+  clip-path: inset(0 3.125% 0 0%);
+}
+.page-transition[data-frame='7'] {
+  opacity: 0.8549;
+  clip-path: inset(0 3.125% 0 0%);
+}
+.page-transition[data-frame='8'] {
+  opacity: 1;
+  clip-path: inset(0 1.5625% 0 0%);
+}
+.page-transition[data-frame='9'] {
+  opacity: 1;
+  clip-path: inset(0 0% 0 0%);
+}
+.page-transition[data-frame='10'] {
+  opacity: 1;
+  clip-path: inset(0 0% 0 0%);
+}
+.page-transition[data-frame='11'] {
+  opacity: 1;
+  clip-path: inset(0 0% 0 0%);
+}
+.page-transition[data-frame='12'] {
+  opacity: 1;
+  clip-path: inset(0 0% 0 0%);
+}
+.page-transition[data-frame='13'] {
+  opacity: 1;
+  clip-path: inset(0 0% 0 0%);
 }
