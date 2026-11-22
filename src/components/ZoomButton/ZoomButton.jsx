@@ -4,9 +4,12 @@
 // Styles: .card--zoom (button reset, zoom-in cursor) and .zoom-button in index.css.
 import { useState } from 'react'
 import { Modal } from '../Modal/Modal'
+import { AutoplayVideo } from '../AutoplayVideo/AutoplayVideo'
+import { videoFor } from '../../lib/gifVideo'
 
 export function ZoomButton({ src, alt = '', children }) {
   const [open, setOpen] = useState(false)
+  const video = videoFor(src)
   return (
     <>
       <button
@@ -20,7 +23,11 @@ export function ZoomButton({ src, alt = '', children }) {
       </button>
       {/* A sibling of the button, not a child: a portal's React events bubble through the tree. */}
       <Modal size="lightbox" open={open} title={alt || 'Image'} onClose={() => setOpen(false)} portal>
-        <img src={src} alt={alt} className="lightbox__media" />
+        {video ? (
+          <AutoplayVideo src={video} label={alt} className="lightbox__media" />
+        ) : (
+          <img src={src} alt={alt} className="lightbox__media" />
+        )}
       </Modal>
     </>
   )

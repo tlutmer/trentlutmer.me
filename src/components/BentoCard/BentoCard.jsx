@@ -5,6 +5,8 @@ import { imageEffectSource, parsePosition } from '../../lib/effectSource'
 import { measureOutlinePath } from '../../lib/shapePath'
 import { Modal } from '../Modal/Modal'
 import { usePingPong } from '../../lib/usePingPong'
+import { useKeepPlaying } from '../../lib/useKeepPlaying'
+import { videoFor } from '../../lib/gifVideo'
 
 const prefersReducedMotion =
   typeof window !== 'undefined' &&
@@ -75,9 +77,9 @@ export function BentoCard({
   shape,
   title,
   tag,
-  video,
+  video: videoProp,
   pingPong = false,
-  image,
+  image: imageProp,
   alt = '',
   fit = 'cover',
   imagePosition = 'center',
@@ -91,8 +93,13 @@ export function BentoCard({
   size,
   className = '',
 }) {
+  // A GIF that now ships as an MP4 plays through the video path below, always on and looping.
+  const converted = videoFor(imageProp)
+  const image = converted ? undefined : imageProp
+  const video = videoProp ?? converted
   const effect = useRef(null)
   const [videoEl, setVideoEl] = useState(null)
+  useKeepPlaying(converted ? videoEl : null)
   const [imgEl, setImgEl] = useState(null)
   usePingPong(videoEl, pingPong)
 
@@ -232,7 +239,7 @@ export function BentoCard({
                 ref={setVideoEl}
                 className={mediaClass}
                 src={video}
-                autoPlay={!prefersReducedMotion}
+                autoPlay={converted ? true : !prefersReducedMotion}
                 muted
                 loop={!pingPong}
                 playsInline
@@ -302,7 +309,7 @@ export function BentoCard({
           {image ? (
             <img src={image} alt={alt} className="lightbox__media" />
           ) : (
-            <video src={video} className="lightbox__media" autoPlay muted loop playsInline controls />
+            <video src={video} className="lightbox__media" autoPlay muted loop playsInline controls={!converted} />
           )}
         </Modal>
       )}
