@@ -1,6 +1,7 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { HeadlineScramble } from '../HeadlineScramble/HeadlineScramble'
+import { CoffeePill } from '../CoffeePill/CoffeePill'
 import { PageTransition } from '../PageTransition/PageTransition'
-import { SiteFooter } from '../SiteFooter/SiteFooter'
 import { SiteNav } from '../SiteNav/SiteNav'
 import { ThemeTransition } from '../ThemeTransition/ThemeTransition'
 
@@ -15,24 +16,28 @@ function skipToContent(event) {
   main.scrollIntoView()
 }
 
+// The coffee pill shows only on the Work (home) and Info pages, not on the project pages.
+const COFFEE_PILL_PATHS = ['/', '/about']
+
 // The nav is part of the layout, not of each page: it stays mounted across navigation
 // (so its theme dial and hover state carry over) while only the page below it
-// transitions. The footer follows the page, also outside the transition. All of it sits inside
-// ThemeTransition, which plays over the whole page when the colour theme changes.
+// transitions. The coffee pill floats above the page, also outside the transition.
 export function Layout() {
+  const { pathname } = useLocation()
+  const showCoffee = COFFEE_PILL_PATHS.includes(pathname.replace(/\/+$/, '') || '/')
   return (
-    <ThemeTransition>
-      <a className="skip-link" href="#main-content" onClick={skipToContent}>
+    <>
+      <ThemeTransition />
+      <HeadlineScramble />
+      <a className="skip-link" href="#main-content" onClick={skipToContent} tabIndex={0}>
         Skip to content
       </a>
-      <div className="site-shell">
-        <SiteNav />
-      </div>
+      <SiteNav />
       <PageTransition>
         <Outlet />
       </PageTransition>
-      <SiteFooter />
-    </ThemeTransition>
+      {showCoffee && <CoffeePill />}
+    </>
   )
 }
 

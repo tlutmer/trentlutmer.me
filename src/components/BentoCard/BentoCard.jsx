@@ -1,91 +1,94 @@
-import { useGSAP } from '@gsap/react'
-import { gsap } from 'gsap'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChromaLagEffect } from '../ChromaLagEffect/ChromaLagEffect'
 import { imageEffectSource, parsePosition } from '../../lib/effectSource'
 import { measureOutlinePath } from '../../lib/shapePath'
-import { PATH_LENGTH, playStrokeNFade } from '../../lib/strokeNFade'
 import { Modal } from '../Modal/Modal'
 import { usePingPong } from '../../lib/usePingPong'
-
-gsap.registerPlugin(useGSAP)
 
 const prefersReducedMotion =
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-// The effect canvas fills the card's inner shape. ChromaLagEffect sets its own
-// 800/320 aspect ratio and an opaque backdrop inline, so both are overridden
-// here — the plain <video>/<img> underneath then shows through until the WebGL
-// canvas is ready (and stays as the fallback if WebGL2 is unavailable).
-//
-// The canvas stops 1px short of the card's edge — where the 1px border is — because the browser
-// snaps a WebGL canvas to whole pixels while a card can sit at a fractional position, and the
-// canvas would otherwise paint over part of the border (see also .card__ring in index.css).
-const EFFECT_STYLE = {
-  position: 'absolute',
-  inset: 1,
-  width: 'calc(100% - 2px)',
-  height: 'calc(100% - 2px)',
-  aspectRatio: 'auto',
-  backgroundColor: 'transparent',
+// The classes that place a picture in its card (`.card__media--pos-*` in index.css) — the
+// object-positions the site uses; anything else falls back to the centre.
+const POSITION_CLASSES = {
+  '50% 20%': 'card__media--pos-50-20',
+  '50% 35%': 'card__media--pos-50-35',
+  '50% 91%': 'card__media--pos-50-91',
+  '42% 40%': 'card__media--pos-42-40',
 }
 
-// With `inset`, the media is a framed picture instead of filling the card: FRAMED_EFFECT_STYLE fills
-// its own box (the 1px border-safe inset above is only for a canvas that reaches the card's edge).
-const FRAMED_EFFECT_STYLE = { ...EFFECT_STYLE, inset: 0, width: '100%', height: '100%' }
+// The drawn outline is normalised to this length (its `pathLength`), so the CSS keyframes that draw it
+// (card-reveal-draw in index.css) fit an outline of any size.
+const PATH_LENGTH = 256
 
-// One outlined card. The silhouette is a clip-path from `shapeVars` (custom properties
-// from generateShape(), lib/randomShape.js): `.card__frame` is the outline shape,
-// `.card__inner` the same shape inset 1px, so the two layered read as a 1px stroke.
-// `area` (a–f) only places the card in the bento grid.
+// How long the reveal runs, in ms (its CSS animations are 1070ms); a fallback in case the animation's
+// end event never arrives (a hidden tab, say).
+const REVEAL_MS = 1500
+
+// One outlined card. Its silhouette is a clip-path from the outline named by `shape` — a class in
+// shapes.css (`.shape-work-a`), generated from lib/randomShape.js by scripts/generate-shapes.mjs:
+// `.card__frame` is the outline shape, `.card__inner` the same shape inset 1px, so the two layered
+// read as a 1px stroke. `area` (a–h) only places the card in the bento grid.
 //
 // Media (both fill the shape edge to edge), and both are re-drawn on top by ChromaLagEffect
 // through the CRT smear; hovering the card "locks" the picture in (activates cell 0):
 // - `video`: plays natively. `pingPong` plays it forward then in reverse instead of looping.
 // - `image`: a still picture (an animated GIF keeps animating). `fit` is 'cover' (default)
-//   or 'contain'; `imagePosition` is the CSS object-position.
+//   or 'contain'; `imagePosition` is where it sits (see POSITION_CLASSES).
 // The effect only runs while the card is near the viewport (each one is a WebGL context).
 //
 // Reveal: each card starts hidden and, the first time it scrolls into view, plays
 // the "stroke n' fade" motion — its outline draws itself around its own
-// silhouette while the card fades in (see lib/strokeNFade.js). Once only. With
+// silhouette while the card fades in. Once only. It is all CSS, keyed on the card's data-reveal
+// (pending → revealing → done); the outline's path is measured here (lib/shapePath.js). With
 // reduced motion (or no IntersectionObserver) cards are simply visible.
 //
-// `to` makes the whole card a router link. `body` (a string, or an array of
-// paragraphs; a React node, or an array mixing strings and nodes, is rendered as it is — for a
-// heading, a list or links) is text centered in the card, for text-only cards; the card can grow
-// taller than its cell's shape to fit it (see the sizer below). A card with no `title`/`body` shows no
-// text (and is hidden from assistive tech if it also has no media).
+// `to` makes the whole card a router link (its picture, if any, is then decorative: the title is
+// the link's name). `body` (a string, or an array of paragraphs; a React node, or an array mixing
+// strings and nodes, is rendered as it is — for a heading, a list or links) is text centered in
+// the card, for text-only cards; the card can grow taller than its cell's shape to fit it (see the
+// sizer below). A card with no `title`/`body` shows no text (and is hidden from assistive tech if
+// it also has no media).
 //
-// `inset` + `ratio` frame the picture instead of filling the card with it: the media is a box as
-// wide as the card less `inset` (a CSS length) on the left and right, at the picture's own
-// proportions (`ratio`: [w, h]), centred vertically — the whole picture, uncropped, with the card's
-// fill (--card-fill in `shapeVars`) around it. The effect runs on the picture only.
+// `fill` swaps the card's fill for 'logo' (a literal that matches the Kelex logo image) or 'panel'
+// (grey-700) — see .card--fill-* in index.css.
+//
+// `framed` + `size` frame the picture instead of filling the card with it: the media is a box as
+// wide as the card less 1rem on each side, at the picture's own proportions (`size`: [w, h], in
+// pixels of the file), centred vertically — the whole picture, uncropped, with the card's fill
+// around it. The effect runs on the picture only.
 //
 // Project pages use two more modes (Home and Info use neither):
-// - `plain`: a plain rectangle — no generated silhouette, so `shapeVars` only needs the
-//   `--card-fill` / aspect-ratio bits — and the picture is shown as it is, without the
-//   ChromaLagEffect CRT smear. It fades in on scroll instead of drawing its outline.
-// - `lightbox`: the card is a button that opens its image/video in the Modal, at 66% of the
+// - `plain`: a plain rectangle — no generated silhouette — and the picture is shown as it is,
+//   without the ChromaLagEffect CRT smear. It fades in on scroll instead of drawing its outline.
+//   Give it `size` ([w, h]) and the card takes its picture's own proportions (the picture's width
+//   and height attributes size it); otherwise it is 16:9.
+// - `lightbox`: the card is a button that opens its image/video in the Modal, at 80% of the
 //   page; clicking outside the Modal closes it.
+//
+// `crt` (default on) is the ChromaLagEffect smear itself — off shows the picture or video as it
+// is, still inside its generated silhouette with the hover-lock and reveal draw untouched.
 export function BentoCard({
   area,
+  shape,
   title,
+  tag,
   video,
   pingPong = false,
   image,
   alt = '',
   fit = 'cover',
   imagePosition = 'center',
-  shapeVars,
+  fill,
   to,
   body,
   plain = false,
   lightbox = false,
-  inset,
-  ratio,
+  framed = false,
+  crt = true,
+  size,
   className = '',
 }) {
   const effect = useRef(null)
@@ -100,7 +103,8 @@ export function BentoCard({
   const strokeRef = useRef(null)
   const canAnimate = !prefersReducedMotion && typeof IntersectionObserver !== 'undefined'
   const [inView, setInView] = useState(false)
-  const [revealed, setRevealed] = useState(!canAnimate)
+  const [phase, setPhase] = useState(canAnimate ? 'pending' : 'done')
+  const revealed = phase === 'done'
   const [near, setNear] = useState(!canAnimate)
   const [lightboxOpen, setLightboxOpen] = useState(false)
 
@@ -114,7 +118,8 @@ export function BentoCard({
     return () => observer.disconnect()
   }, [canAnimate])
 
-  // Start the reveal the first time the card is (mostly) on screen.
+  // Start the reveal the first time the card is (mostly) on screen: measure its outline, then let the
+  // CSS play it. A card with no outline to draw (a plain one) is simply shown.
   useEffect(() => {
     if (revealed || inView || !rootRef.current) return undefined
     const observer = new IntersectionObserver(
@@ -130,55 +135,51 @@ export function BentoCard({
     return () => observer.disconnect()
   }, [revealed, inView])
 
-  useGSAP(
-    () => {
-      if (!inView || revealed) return undefined
-      const outline = measureOutlinePath(rootRef.current)
-      if (!outline) {
-        setRevealed(true)
-        return undefined
-      }
-      svgRef.current.setAttribute('viewBox', `0 0 ${outline.width} ${outline.height}`)
-      strokeRef.current.setAttribute('d', outline.d)
-      const timeline = playStrokeNFade({
-        stroke: strokeRef.current,
-        fill: innerRef.current,
-        frame: frameRef.current,
-        onComplete: () => {
-          gsap.set([frameRef.current, innerRef.current], { clearProps: 'opacity' })
-          setRevealed(true)
-        },
-      })
-      return () => timeline.kill()
-    },
-    { dependencies: [inView], scope: rootRef },
-  )
+  useEffect(() => {
+    if (!inView || phase !== 'pending') return
+    const outline = measureOutlinePath(rootRef.current)
+    if (!outline) {
+      setPhase('done')
+      return
+    }
+    svgRef.current.setAttribute('viewBox', `0 0 ${outline.width} ${outline.height}`)
+    strokeRef.current.setAttribute('d', outline.d)
+    setPhase('revealing')
+  }, [inView, phase])
+
+  useEffect(() => {
+    if (phase !== 'revealing') return undefined
+    const id = setTimeout(() => setPhase('done'), REVEAL_MS)
+    return () => clearTimeout(id)
+  }, [phase])
 
   const isGif = Boolean(image) && /\.gif(\?|$)/i.test(image)
-  const imageFill = shapeVars?.['--card-fill']
   const imageSource = useMemo(
     () =>
-      imgEl && !plain
-        ? imageEffectSource(imgEl, { fit, position: parsePosition(imagePosition), fill: imageFill })
+      imgEl && !plain && crt
+        ? imageEffectSource(imgEl, { fit, position: parsePosition(imagePosition) })
         : null,
-    [imgEl, fit, imagePosition, imageFill, plain],
+    [imgEl, fit, imagePosition, plain, crt],
   )
 
   // A GIF's frames only reach the effect if it re-reads the picture as it plays.
   useEffect(() => {
-    if (!isGif || !near || !imgEl || prefersReducedMotion || plain) return undefined
+    if (!isGif || !near || !imgEl || prefersReducedMotion || plain || !crt) return undefined
     const id = setInterval(() => effect.current?.refresh(), 1000 / 20)
     return () => clearInterval(id)
-  }, [isGif, near, imgEl, plain])
+  }, [isGif, near, imgEl, plain, crt])
 
   const hasMedia = Boolean(video || image)
-  const framed = Boolean(inset && ratio)
+  const natural = Boolean(size) && !framed
   const Media = framed ? 'div' : Fragment
-  const mediaProps = framed
-    ? { className: 'card__media-box', style: { left: inset, right: inset, aspectRatio: `${ratio[0]} / ${ratio[1]}` } }
-    : {}
-  const effectStyle = framed ? FRAMED_EFFECT_STYLE : EFFECT_STYLE
-  const hasText = Boolean(title)
+  const mediaProps = framed ? { className: 'card__media-box' } : {}
+  const effectClass = framed ? 'card__effect card__effect--framed' : 'card__effect'
+  const mediaClass = ['card__media', fit === 'contain' && 'card__media--contain', POSITION_CLASSES[imagePosition]]
+    .filter(Boolean)
+    .join(' ')
+  // A linked card is named by its title; its picture is decoration there.
+  const imageAlt = to && title ? '' : alt
+  const hasText = Boolean(title || tag)
   const hasBody = Boolean(body)
   const paragraphs = hasBody ? [].concat(body) : []
   const bodyContent = paragraphs.map((part, i) =>
@@ -187,7 +188,7 @@ export function BentoCard({
   const canZoom = lightbox && hasMedia && !to
   const Root = to ? Link : canZoom ? 'button' : 'article'
   const rootProps = to
-    ? { to }
+    ? { to, tabIndex: 0 }
     : canZoom
       ? {
           type: 'button',
@@ -196,15 +197,30 @@ export function BentoCard({
           'aria-label': alt ? `View larger: ${alt}` : 'View larger',
         }
       : { 'aria-hidden': hasText || hasMedia || hasBody ? undefined : 'true' }
+  const classes = [
+    'card',
+    area && `card--${area}`,
+    shape && `shape-${shape}`,
+    hasMedia && 'card--media',
+    hasBody && 'card--text',
+    to && 'card--link',
+    canZoom && 'card--zoom',
+    plain && 'card--plain',
+    natural && 'card--natural',
+    framed && 'card--framed',
+    fill && `card--fill-${fill}`,
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <>
       <Root
         {...rootProps}
         ref={rootRef}
-        data-reveal={revealed ? 'done' : 'pending'}
-        className={`card${area ? ` card--${area}` : ''}${hasMedia ? ' card--media' : ''}${hasBody ? ' card--text' : ''}${to ? ' card--link' : ''}${canZoom ? ' card--zoom' : ''}${plain ? ' card--plain' : ''}${className ? ` ${className}` : ''}`}
-        style={shapeVars}
+        data-reveal={phase}
+        className={classes}
         onPointerEnter={() => effect.current?.activateCell(0)}
         onPointerLeave={() => effect.current?.deactivateCell(0)}
       >
@@ -214,7 +230,7 @@ export function BentoCard({
             {video && (
               <video
                 ref={setVideoEl}
-                className="card__media"
+                className={mediaClass}
                 src={video}
                 autoPlay={!prefersReducedMotion}
                 muted
@@ -222,33 +238,34 @@ export function BentoCard({
                 playsInline
                 preload="metadata"
                 aria-hidden="true"
-                style={{ objectFit: fit }}
               />
             )}
-            {video && videoEl && near && !prefersReducedMotion && !plain && (
-              <ChromaLagEffect ref={effect} source={videoEl} fit={fit} style={effectStyle} />
+            {video && videoEl && near && !prefersReducedMotion && !plain && crt && (
+              <ChromaLagEffect ref={effect} source={videoEl} fit={fit} className={effectClass} />
             )}
             {image && (
               <img
                 ref={setImgEl}
-                className="card__media"
+                className={mediaClass}
                 src={image}
-                alt={alt}
+                alt={imageAlt}
+                width={size?.[0]}
+                height={size?.[1]}
                 loading={near ? 'eager' : 'lazy'}
                 decoding="async"
-                style={{ objectFit: fit, objectPosition: imagePosition }}
               />
             )}
-            {image && imageSource && near && !prefersReducedMotion && !plain && (
-              <ChromaLagEffect ref={effect} source={imageSource} style={effectStyle} />
+            {image && imageSource && near && !prefersReducedMotion && !plain && crt && (
+              <ChromaLagEffect ref={effect} source={imageSource} className={effectClass} />
             )}
           </Media>
-          {hasBody && (
-            <div className="card__body">{bodyContent}</div>
-          )}
+          {hasBody && <div className="card__body">{bodyContent}</div>}
           {hasText && (
             <div className="card__text">
-              {title && <h3 className="card__title">{title}</h3>}
+              <div className="card__caption">
+                {title && <h2 className="card__title">{title}</h2>}
+                {tag && <p className="card__tag">{tag}</p>}
+              </div>
             </div>
           )}
         </div>
@@ -257,17 +274,17 @@ export function BentoCard({
             {bodyContent}
           </div>
         )}
-        {shapeVars?.['--shape-ring'] && <div className="card__ring" aria-hidden="true" />}
+        {shape && !plain && <div className="card__ring" aria-hidden="true" />}
         {!revealed && (
           <svg ref={svgRef} className="card__stroke" aria-hidden="true">
             <path
               ref={strokeRef}
+              onAnimationEnd={() => setPhase('done')}
               fill="none"
               pathLength={PATH_LENGTH}
               stroke="currentColor"
               strokeWidth={1}
               strokeLinejoin="miter"
-              style={{ opacity: 0 }}
             />
           </svg>
         )}
@@ -280,19 +297,12 @@ export function BentoCard({
           open={lightboxOpen}
           title={alt || (image ? 'Image' : 'Video')}
           onClose={() => setLightboxOpen(false)}
+          portal
         >
           {image ? (
-            <img src={image} alt={alt} className="h-full w-full object-contain" />
+            <img src={image} alt={alt} className="lightbox__media" />
           ) : (
-            <video
-              src={video}
-              className="h-full w-full object-contain"
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-            />
+            <video src={video} className="lightbox__media" autoPlay muted loop playsInline controls />
           )}
         </Modal>
       )}

@@ -1,6 +1,17 @@
 import { useId, useState } from 'react'
 import { Bullets, Metrics, P, Paragraphs } from '../components/CaseStudy/CaseStudy'
+import { PaddedPicture } from '../components/PaddedPicture/PaddedPicture'
 import { ProjectSplit } from '../components/ProjectSplit/ProjectSplit'
+
+// Looping screen recordings (public/media/fedregs), shown in the same padded black card as the other project pages.
+const gif = (file, alt) => ({
+  component: <PaddedPicture src={`/media/fedregs/${file}`} size={[1920, 1080]} ratio={[1920, 1080]} alt={alt} padding="3rem" />,
+})
+
+const RECORDINGS = [
+  gif('FedRegs_CommentThemes_1080p_loop.gif', 'A screen recording of the Federal Regulations comment themes view.'),
+  gif('FedRegs_DocumentViewer_1080p_loop.gif', 'A screen recording of the Federal Regulations document viewer.'),
+]
 
 // The full case study, hidden until the reader asks for it. The button is the disclosure: it
 // shows and hides the body and says so with aria-expanded.
@@ -33,49 +44,49 @@ function CaseText({ children }) {
 // had no alt text on any of its images; these are written fresh, from the pictures themselves.
 const IMAGES = {
   comments: {
-    src: '/images/fedregs/001-fedregs.jpg',
+    src: '/media/fedregs/fn-fedregs-001.jpg',
     w: 2880,
     h: 2048,
     alt: 'The FiscalNote platform’s Comments tab for a rulemaking: a stance-detection scatter plot (oppose/support against negative/positive) beside a Comment Themes pie chart, with a table of individual comments below.',
   },
   persona: {
-    src: '/images/fedregs/004-fedregs.jpg',
+    src: '/media/fedregs/fn-fedregs-004.jpg',
     w: 2880,
     h: 2048,
     alt: 'A user persona card for "Federal Frankie, Director of Regulatory and Technical Affairs," with his responsibilities, motivation, needs and feelings, and a Thinks / Hears / Does / Says / Sees / Pains empathy map.',
   },
   whiteboard: {
-    src: '/images/fedregs/005-fedregs.jpg',
+    src: '/media/fedregs/fn-fedregs-005.jpg',
     w: 2880,
     h: 2048,
     alt: 'A whiteboard covered in sticky notes and a hand-drawn, numbered user-flow diagram mapping how a regulatory affairs manager tracks a rule from alert to comment.',
   },
   wireframes: {
-    src: '/images/fedregs/007-fedregs.jpg',
+    src: '/media/fedregs/fn-fedregs-007.jpg',
     w: 2880,
     h: 2048,
     alt: 'A wall of sketched wireframes exploring the regulation overview, comment themes and document viewer screens.',
   },
   overview: {
-    src: '/images/fedregs/010-fedregs.jpg',
+    src: '/media/fedregs/fn-fedregs-010.jpg',
     w: 2880,
     h: 2048,
     alt: 'An iPad showing the FiscalNote app’s regulation Overview tab: its basic information on the left, a list of authorizing legislation on the right.',
   },
   documents: {
-    src: '/images/fedregs/011-fedregs.jpg',
+    src: '/media/fedregs/fn-fedregs-011.jpg',
     w: 2880,
     h: 2048,
     alt: 'The same regulation page with its Documents panel open, listing attached comment letters, including one from Cook Group Inc. open for reading.',
   },
   tabsA: {
-    src: '/images/fedregs/012-fedregs.gif',
+    src: '/media/fedregs/fn-fedregs-012.gif',
     w: 1569,
     h: 962,
     alt: 'A screen recording of a cursor switching between the Overview and Documents tabs on the regulation page.',
   },
   tabsB: {
-    src: '/images/fedregs/013-fedregs.gif',
+    src: '/media/fedregs/fn-fedregs-013.gif',
     w: 1569,
     h: 962,
     alt: 'A second screen recording of the same Overview / Documents tab switch, from a moment later in the demo.',
@@ -93,6 +104,7 @@ export function FederalRegs() {
         IMAGES.whiteboard,
         IMAGES.persona,
         IMAGES.wireframes,
+        ...RECORDINGS,
         IMAGES.overview,
         IMAGES.documents,
         IMAGES.tabsA,

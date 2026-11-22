@@ -1,7 +1,7 @@
 'use client'
 
 // Requires: react
-import { forwardRef, useImperativeHandle, useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { forwardRef, useImperativeHandle, useLayoutEffect, useRef } from 'react'
 
 export type ChromaLagFit = 'cover' | 'contain' | 'stretch'
 
@@ -43,7 +43,6 @@ export type ChromaLagEffectProps = {
   fit?: ChromaLagFit
   position?: { x: number; y: number }
   className?: string
-  style?: CSSProperties
 }
 
 type RendererEvents = {
@@ -761,7 +760,6 @@ function createRenderer(
       source = null
       if (!uploadSource()) {
         canvas.removeAttribute('data-render-ready')
-        canvas.style.opacity = '0'
         return false
       }
     }
@@ -825,7 +823,6 @@ function createRenderer(
     if (!canvas.hasAttribute('data-render-ready')) {
       gl.finish()
       canvas.setAttribute('data-render-ready', '')
-      canvas.style.opacity = '1'
     }
     return source !== null
   }
@@ -834,7 +831,6 @@ function createRenderer(
     event.preventDefault()
     contextLost = true
     canvas.removeAttribute('data-render-ready')
-    canvas.style.opacity = '0'
     events.lost()
   }
 
@@ -974,7 +970,6 @@ export const ChromaLagEffect = forwardRef<ChromaLagEffectHandle, ChromaLagEffect
       fit = 'cover',
       position = { x: 0.5, y: 0.5 },
       className,
-      style,
     },
     ref,
   ) {
@@ -1072,31 +1067,16 @@ export const ChromaLagEffect = forwardRef<ChromaLagEffectHandle, ChromaLagEffect
       }
     }, [columns, fit, positionX, positionY, rows, source])
 
+    // The classes (.chroma-lag, .chroma-lag__canvas in index.css) size the box and keep the canvas
+    // clear until its first frame is drawn (data-render-ready).
     return (
-      <div
-        className={className}
-        style={{
-          aspectRatio: `${CHROMA_LAG_WIDTH} / ${CHROMA_LAG_HEIGHT}`,
-          backgroundColor: 'rgb(5, 5, 4)',
-          height: '100%',
-          position: 'relative',
-          width: '100%',
-          ...style,
-        }}
-      >
+      <div className={['chroma-lag', className].filter(Boolean).join(' ')}>
         <canvas
           aria-hidden="true"
+          className="chroma-lag__canvas"
           data-chroma-lag-canvas
           height={CHROMA_LAG_HEIGHT}
           ref={canvasRef}
-          style={{
-            display: 'block',
-            height: '100%',
-            inset: 0,
-            opacity: 0,
-            position: 'absolute',
-            width: '100%',
-          }}
           width={CHROMA_LAG_WIDTH}
         />
       </div>

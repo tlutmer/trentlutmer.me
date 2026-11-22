@@ -97,7 +97,7 @@
    so this row's own padding is what keeps its content off the actual screen edge; inside that, its
    content is the same 800px column as everything else (.content, also shared with the footer's own
    row) — logo and dial sit at that column's own edges, not the viewport's. The coffee status used
-   to sit between them; it now lives in the fixed footer, bottom left — see SiteFooter.jsx. */
+   to sit between them; it is now a floating pill — see CoffeePill.jsx. */
 .site-header__top-row {
   /* 24px lines (16px x 1.5): the stacked name / Work / Info links are each a 24px-tall target that
      doesn't overlap the next (WCAG 2.5.8). */
@@ -108,25 +108,58 @@
 .site-header__row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1.5rem;
+}
+/* The page links and the theme dial at the right of the row. */
+.site-header__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+}
+/* The turned diamond sticks out past its box by ~0.35rem a side: this keeps its visible edge on the column's edge. */
+.site-header__right .theme-dial {
+  margin-right: 0.35rem;
+}
+/* The logo mark at the left (links home): 2rem tall, about the size of the theme dial, in the theme's brightest text colour. */
+.site-header__portrait {
+  display: block;
+  width: 1.5rem;
+  height: 2rem;
+  color: var(--font-100, #ffffff);
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+.site-header__portrait:hover {
+  opacity: 0.8;
+}
+.site-header__portrait .wipe-swap,
+.site-header__portrait .wipe-swap__visual,
+.site-header__portrait .wipe-swap__base,
+.site-header__portrait .wipe-swap__cell {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.site-header__portrait .wipe-swap__cell:not([data-show]) {
+  display: none;
+}
+.site-header__portrait .wipe-swap__visual {
+  display: grid;
+  position: relative;
+}
+.site-header__portrait svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .site-header__left {
   display: flex;
   align-items: center;
   gap: 1.5rem;
 }
-/* The coffee status sits at the top right, in the nav's row, at the label size, its own text left-aligned. */
-.site-header__coffee {
-  margin: 0 0 0 auto;
-  text-align: left;
-  color: var(--font-100, #ffffff);
-}
-/* The same size as the name and the links beside it (--text-body), not the label size. */
-.site-header__coffee.type--label {
-  font-size: var(--text-body);
-}
 /* Theme dial (see ThemeDial.jsx): four square petals tiled edge to edge into one diamond, at the
-   left of the nav's row, with a black hub where they meet. Each petal is a real <button> filled with
+   right of the nav's row, a thin gap where they meet (no hub). Each petal is a real <button> filled with
    that theme's colour (a fixed key, not the current theme). The grid lays the petals out square
    (top-left, top-right, bottom-left, bottom-right); the container's constant 45deg rotation turns
    that square into the diamond, carrying top-left to the top, top-right to the right, bottom-right
@@ -136,8 +169,8 @@
    effect over the page). */
 .theme-dial {
   display: grid;
-  grid-template-columns: repeat(2, 1rem);
-  grid-template-rows: repeat(2, 1rem);
+  grid-template-columns: repeat(2, 0.75rem);
+  grid-template-rows: repeat(2, 0.75rem);
   grid-template-areas:
     'tl tr'
     'bl br';
@@ -147,8 +180,8 @@
   transition: transform 0.4s ease;
 }
 .theme-dial__dot {
-  width: 1rem;
-  height: 1rem;
+  width: 0.75rem;
+  height: 0.75rem;
   margin: 0;
   padding: 0;
   border: 0;
@@ -162,17 +195,6 @@
 .theme-dial__dot--cyan { --dot: var(--cyan-300); }
 .theme-dial__dot--magenta { --dot: var(--magenta-300); }
 .theme-dial__dot--yellow { --dot: var(--yellow-300); }
-/* The hub sits centred where all four petals meet, same square-then-rotated treatment as the petals. */
-.theme-dial__hub {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(0.5rem + 4px);
-  height: calc(0.5rem + 4px);
-  transform: translate(-50%, -50%);
-  background: var(--grey-900);
-  pointer-events: none;
-}
 
 /* The page-wide scanner (components/ScannerEffect) covers the whole viewport on a theme change. */
 .scanner-overlay {
@@ -222,6 +244,7 @@
 
 .wipe-swap__visual {
   display: grid;
+  position: relative;
 }
 
 .wipe-swap__base,
@@ -230,6 +253,14 @@
   white-space: nowrap;
 }
 
+/* Only the text in `data-size` sets the box's width (so a full stop after it sits right after it, in either
+   language); the other layers lie over it, out of the flow. The wipe cells always do. */
+.wipe-swap[data-size='en'] .wipe-swap__base--alt,
+.wipe-swap[data-size='alt'] .wipe-swap__base:not(.wipe-swap__base--alt),
+.wipe-swap__cell {
+  position: absolute;
+  inset: 0;
+}
 /* Hidden until the motion (or reduced-motion swap) shows them. */
 .wipe-swap__base--alt {
   visibility: hidden;
@@ -254,14 +285,37 @@
 .wipe-swap__cell[data-show] {
   display: block;
 }
+/* The glitch flickers through the three theme colours, cyan, magenta and yellow (the theme dial's), then
+   settles on the text's own colour. */
 .wipe-swap__cell[data-tone='red'] {
-  color: var(--red-300);
+  color: var(--cyan-300);
 }
 .wipe-swap__cell[data-tone='green'] {
-  color: var(--green-300);
+  color: var(--magenta-300);
 }
 .wipe-swap__cell[data-tone='blue'] {
-  color: var(--blue-300);
+  color: var(--yellow-300);
+}
+/* No white mid-wipe: a cell not yet reached (the outgoing text) is cyan, and the last step is yellow. */
+.wipe-swap[data-wiping] .wipe-swap__cell[data-show]:not([data-tone]) {
+  color: var(--cyan-300);
+}
+.wipe-swap__cell[data-tone='done'] {
+  color: var(--yellow-300);
+}
+/* A light glitch on the nav logo only while its wipe runs: each visible cell twitches a little and
+   carries faint magenta and cyan ghosts, then settles when the wipe ends. (The hero name has the plain
+   wipe, no jitter.) */
+@media (prefers-reduced-motion: no-preference) {
+  .site-header__portrait .wipe-swap[data-wiping] .wipe-swap__cell[data-show] {
+    filter: drop-shadow(-1px 0 0 var(--magenta-300)) drop-shadow(1px 0 0 var(--cyan-300));
+    animation: wipe-jitter 0.3s steps(1, end) infinite;
+  }
+}
+@keyframes wipe-jitter {
+  0% { transform: translate(0, 0); }
+  35% { transform: translate(-0.06em, 0); }
+  70% { transform: translate(0.08em, 0); }
 }
 /* Each cell is a window onto one ninth of the name's box. */
 .wipe-swap__cell[data-cell='0'] {
@@ -294,7 +348,7 @@
 
 .site-header__logo-words {
   display: flex;
-  gap: 0.375rem;
+  gap: 1rem;
 }
 /* The ✦ between Work and Info — decorative, in the same colour as an inactive link. */
 .site-header__logo-sep {
@@ -342,7 +396,7 @@
 
 /* v2's .about container: each page's own content (headline, bento, roast grid, project pages)
    shares a 1540px-max column with 2rem side padding. The nav (SiteNav.jsx, outside this — see
-   .work-links below) and the footer (SiteFooter.jsx) are both full page width instead, each with
+   .work-links below) and the page's other full-width bars are full page width instead, each with
    their own padding, so this cap is page content only now. */
 .site-shell {
   width: 100%;
@@ -354,7 +408,7 @@
 /* All page content — headline, bento, roast grid, project pages — sits in one
    centered 800px column (the nav above and the footer below are both full width instead).
    The nav's own middle grid column (.site-header__top-row) and the footer's own wrapper
-   (.site-footer__row) both cap at this same 50rem, so everything reads as one column. */
+   (the coffee pill floats on its own) cap at this same 50rem, so everything reads as one column. */
 .content {
   width: 100%;
   max-width: 50rem;
@@ -365,7 +419,7 @@
    the body, nav and footer all run edge to edge, with one gutter (fluid, 1rem to 2rem) so their
    edges line up. The nav and footer sit outside <main>, so they're reached via :has(). */
 .page--full {
-  --gutter: 2rem;
+  --gutter: var(--page-pad, 2rem);
 }
 .page--full .site-shell {
   max-width: none;
@@ -377,29 +431,88 @@
 body:has(.page--full) .site-header__top-row {
   padding-inline: 0;
 }
-body:has(.page--full) .site-header__row,
-body:has(.page--full) .site-footer__row {
+body:has(.page--full) .site-header__row {
   max-width: none;
 }
 
-/* Intro headline on the full-width pages (Work and Info): a 40rem measure. */
+/* Intro headline on the full-width pages (Work and Info). Fluid size: 24px on a phone, ~27px at
+   1024px, ~31px at 1440px, ~35px at 1920px, capped at 40px on very wide screens (about 2x body, a clear step up
+   from it). The measure is set in ch so it tracks the size: ~42 characters a line (a monospace
+   headline reads best at 30-45), with a tighter line-height and slight negative tracking as it
+   gets large, and balanced wrapping so a line never ends on a lone word. */
 .page--full .about__headline {
-  max-width: 40rem;
+  font-size: clamp(1.5rem, 1.1rem + 0.9vw, 2.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  max-width: 42ch;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+/* Each sentence of the Work headline is its own block, balanced on its own, so a line never ends on
+   a lone word ("outcomes.") and the two sentences still start on separate lines. */
+.about__headline-line {
+  display: block;
+  text-wrap: balance;
+}
+/* The three hero lines (greeting, who, what) are set apart by a blank line. */
+.about__headline-line + .about__headline-line {
+  margin-top: 1em;
+}
+.about__name {
+  color: var(--font-100, #ffffff);
+}
+/* Section titles ("Personal work", "Professional work"): 20px on a phone to 28px on wide screens. */
+.page--full .bento-section-title {
+  font-size: clamp(1.25rem, 1.05rem + 0.5vw, 1.75rem);
+  line-height: 1.2;
 }
 
-/* Work and Info: the content (intro and bento) is 8 of the 12 columns, centred, on the same 2rem
-   gutters as the bento. The page, nav and footer stay full width. Below 48rem it's the full width:
-   8 columns on a phone is too narrow. Declared after `.page--full .content` so it wins. */
-.home .content,
-.about .content {
-  width: calc((100% - 11 * var(--gutter)) / 12 * 8 + 7 * var(--gutter));
+/* One content width for the page, the nav and the footer, so they line up on every full-width page.
+   Side padding is fluid, 1rem on a phone to 2rem from ~800px, and it is also the grid gutter.
+   `--content-w` is how wide the content column is:
+   - Home, Info and the project pages (ProjectSplit) all share one column: the full width under 48rem, then
+     fluid up to 72rem (see the block below).
+   The nav and footer sit outside <main>, so they get it from <body> (via :has). Other full-width
+   pages keep the full width. */
+body:has(.page--full) {
+  --page-pad: clamp(1rem, 4vw, 2rem);
+  --gutter: var(--page-pad);
+  --content-8: calc((100% - 11 * var(--gutter)) / 12 * 8 + 7 * var(--gutter));
+  --content-w: 100%;
+  padding-inline: var(--page-pad);
+}
+body:has(.page--full) .content {
+  width: var(--content-w);
   max-width: none;
 }
-@media (max-width: 47.9375rem) {
-  .home .content,
-  .about .content {
-    width: 100%;
+
+/* Home only: a smaller, quieter page. The content column is fluid up to 72rem (1152px): the full width
+   until the window is wider than that, then capped, instead of 8 of 12 columns. The type steps down (body 14-15px, headline 18-24px, section
+   titles 16-18px), and the spacing and card gutters tighten. The nav and footer share the column and the type size, so
+   they shrink with it. Under 48rem it is the full width, as before. */
+@media (min-width: 48rem) {
+  body:has(.home, .about, .project-split) {
+    --content-w: min(100%, 72rem);
   }
+}
+body:has(.home, .about, .project-split) {
+  --text-body: clamp(0.875rem, 0.84rem + 0.12vw, 0.9375rem);
+  --text-label: clamp(0.75rem, 0.72rem + 0.1vw, 0.8125rem);
+}
+:is(.home, .about) .about__headline {
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+  max-width: 44ch;
+}
+:is(.home, .about) .about__card--work {
+  padding: clamp(2.5rem, 5vw, 4.5rem) 0;
+}
+.home .bento-section-title {
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
+}
+.home .bento-featured,
+.home .bento-more {
+  --gutter: 1rem;
+  --row-gap: 1.25rem;
 }
 
 /* Project pages (components/ProjectSplit): the title block, info and copy in the left third, all the
@@ -429,6 +542,71 @@ body:has(.page--full) .site-footer__row {
   flex-direction: column;
   gap: 2.5rem;
 }
+/* A media entry can be narrower than the column (ProjectSplit `width`): centered; none is by default. */
+.project-media {
+  width: var(--media-w, 100%);
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+/* PaddedPicture: a picture shown smaller inside a card-sized box — same outline, a black fill, with padding. */
+.padded-picture {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--padded-picture-pad, 3rem);
+  background: #000;
+  border: 0.0625rem solid var(--grey-200, #e3e3e5);
+}
+.padded-picture__media {
+  display: block;
+  width: var(--padded-picture-w, auto);
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* DeviceFrame: a picture on a phone — dark bezel, dynamic island, rounded screen — inside a box like the
+   picture cards. */
+.device-frame {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+  /* The same box as the picture cards beside it: 1px outline, black fill. */
+  background: var(--grey-900, #000000);
+  border: 0.0625rem solid var(--grey-200, #e3e3e5);
+}
+.device-frame__body {
+  position: relative;
+  width: var(--device-w, 16rem);
+  max-width: 100%;
+  padding: 0.625rem;
+  border-radius: 2.75rem;
+  background: #0c0c0e;
+  border: 0.0625rem solid var(--grey-200, #e3e3e5);
+  box-shadow: inset 0 0 0 0.1875rem #232426;
+}
+.device-frame__island {
+  position: absolute;
+  top: 1.25rem;
+  left: 50%;
+  z-index: 1;
+  width: 28%;
+  height: 1.375rem;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #000;
+}
+.device-frame__screen {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 2.125rem;
+}
+
 .project-split__info {
   display: grid;
   gap: 1.5rem;
@@ -452,6 +630,25 @@ body:has(.page--full) .site-footer__row {
   line-height: 1.3;
   color: var(--text, #e3e3e5);
 }
+/* Project pages (every ProjectSplit). The page width and side padding are the shared ones near the top
+   (--content-w, --page-pad). Under 48rem it stacks (title, info, copy, then media) at the full width;
+   from 48rem the text and the media sit side by side, 4 + 8 columns. The left column only sticks on a
+   window that is wide AND tall, so on a short laptop or a landscape phone it can't cover the page. */
+.project-split--home-width {
+  padding-top: clamp(3rem, 8vw, 6rem);
+}
+/* Small pictures (PaddedPicture with a `width`) fill the card on a phone, where half the column is too small to read. */
+@media (max-width: 47.9375rem) {
+  .project-split--home-width .padded-picture[data-sized] .padded-picture__media {
+    width: 100%;
+  }
+  .project-split--home-width .padded-picture {
+    padding: min(var(--padded-picture-pad, 3rem), 1rem);
+  }
+  .project-split--home-width .device-frame {
+    padding: 1.5rem 1rem;
+  }
+}
 @media (min-width: 48rem) {
   .project-split__layout {
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -461,17 +658,25 @@ body:has(.page--full) .site-footer__row {
   .project-split__content {
     grid-column: 1 / span 4;
   }
-  /* Sticky left column (ProjectSplit `sticky`): it holds 2rem from the top, and if it is taller than the
-     window (the full case study is open) it scrolls inside itself instead of being cut off. */
+  .project-split__media {
+    grid-column: 5 / span 8;
+  }
+}
+@media (min-width: 48rem) and (min-height: 40rem) {
   .project-split__content--sticky {
     position: sticky;
     top: 2rem;
-    max-height: calc(100vh - 4rem);
+    max-height: calc(100dvh - 4rem);
     overflow-y: auto;
     padding-bottom: 2rem;
+    /* No scrollbar track at all, in every browser, so nothing sits on top of the text: the column
+       still scrolls with the wheel, trackpad, touch and keyboard. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overscroll-behavior: contain;
   }
-  .project-split__media {
-    grid-column: 5 / span 8;
+  .project-split__content--sticky::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -479,9 +684,10 @@ body:has(.page--full) .site-footer__row {
 .about__card--work {
   padding: 20rem 0 3rem;
 }
-/* The home hero: 8rem of air above and below the headline block. */
-.home .about__card--work {
-  padding: 8rem 0;
+/* The home and Info heroes: fluid air above and below the headline block (4rem on a phone, up to 9rem). */
+.home .about__card--work,
+.about .about__card--work {
+  padding: clamp(4rem, 7vw, 9rem) 0;
 }
 
 .about__body-wrap {
@@ -503,9 +709,6 @@ body:has(.page--full) .site-footer__row {
   }
   .site-header__top-row {
     padding: 0 1rem;
-  }
-  .site-header__coffee {
-    display: none;
   }
 }
 
@@ -533,46 +736,95 @@ body:has(.page--full) .site-footer__row {
   outline: none;
 }
 
-/* Footer (see SiteFooter.jsx) — fixed to the bottom of the viewport at all times (not just once
-   scrolled to the page's end), full page width like the nav above, with 1rem of padding top and
-   bottom always; its left/right padding matches the nav's and the page content's own (2rem, 1rem
-   at 600px and under — see the media query below) so its 800px row lines up with them at every
-   width, not just above 1024px and below 600px. Its own copy of the theme's page colour (like the
-   skip link) at 96% opacity — background only, not the text, so page content shows through it just
-   slightly without touching legibility — and above that content (z-index) but well under the theme
-   wipe and the modal. `body`'s own bottom padding (below) reserves this bar's height so it never
-   covers the last of a page's content. */
-.site-footer {
+/* Coffee pill (see CoffeePill.jsx): a small floating card at the bottom middle of the window, fixed at
+   all times, above the page content (z-index) but well under the theme wipe and the modal. The
+   page's own bottom padding (`body`, index.css) leaves room for it so it never covers the last of a
+   page's content. Two parts, like the cards: a label tab above, in the theme's colour, and the card,
+   chamfered by the card rules (lib/randomShape.js): 8px cuts, on opposite corners only (the card top-right + bottom-left, the label top-left only). The card's edge is a 1px
+   ring: the outer shape filled with the edge colour, the inner shape (inset 1px) filled with the page
+   colour at 88%, blurred behind. */
+.coffee-pill {
   position: fixed;
-  inset: auto 0 0 0;
+  left: 50%;
+  bottom: 1.25rem;
   z-index: 2;
-  padding: 1rem 2rem;
-  background: color-mix(in srgb, var(--theme-bg, #000000) 96%, transparent);
-}
-/* One row at every width. Narrow: the copyright left, the audio player right. From 48rem it's the
-   12-column grid the project pages use: the copyright in columns 1–4, the audio player in 5–12. */
-.site-footer__row {
+  transform: translateX(-50%);
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  color: var(--nav-text, var(--font-300, #ceced3));
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.3;
+  text-decoration: none;
+}
+/* The label tab: the theme's colour behind dark text, its top corners chamfered, sitting on the card's flat top edge. */
+.coffee-pill__tag {
+  margin-left: 0;
+  /* Overlaps the card by 1px, over its top edge: the tag's height is fractional (fluid font size x
+     line-height), so butted edge to edge it left a hairline seam between the tag and the card. */
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
+  padding: 0.25rem 0.75rem;
+  background: var(--theme-fg, var(--font-300, #ceced3));
+  color: var(--theme-bg, #000000);
+  white-space: nowrap;
+  clip-path: polygon(0 0.5rem, 0.5rem 0, 100% 0, 100% 100%, 0 100%);
+}
+.coffee-pill__card {
+  position: relative;
+  align-self: stretch;
+  background: color-mix(in srgb, var(--theme-bg, #000000) 88%, transparent);
+  clip-path: polygon(0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0.5rem 100%, 0 calc(100% - 0.5rem));
+  -webkit-backdrop-filter: blur(0.75rem);
+  backdrop-filter: blur(0.75rem);
+}
+/* The 1px edge: the outline with the same shape inset 1px cut out (even-odd), drawn over the fill so the
+   edge is one solid colour on every side. */
+.coffee-pill__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--font-300, #ceced3);
+  transition: background-color 0.2s ease;
+  clip-path: polygon(evenodd,
+    0 0, calc(100% - 0.5rem) 0, 100% 0.5rem, 100% 100%, 0.5rem 100%, 0 calc(100% - 0.5rem), 0 0,
+    1px 1px, calc(100% - 0.5rem - 0.41px) 1px, calc(100% - 1px) calc(0.5rem + 0.41px), calc(100% - 1px) calc(100% - 1px), calc(0.5rem + 0.41px) calc(100% - 1px), 1px calc(100% - 0.5rem - 0.41px), 1px 1px, 0 0);
+}
+.coffee-pill:hover .coffee-pill__card::after,
+.coffee-pill:focus-visible .coffee-pill__card::after {
+  background: var(--font-100, #ffffff);
+}
+.coffee-pill__inner {
+  display: flex;
+  align-items: center;
   gap: 1rem;
+  padding: 0.75rem 2rem 0.75rem 0.75rem;
 }
-@media (min-width: 48rem) {
-  .site-footer__row {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: var(--gutter, 2rem);
-    align-items: end;
-  }
-  .site-footer__row > .site-footer__copy {
-    grid-column: 1 / span 4;
-    grid-row: 1;
-  }
+.coffee-pill__thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0.0625rem solid var(--font-300, #ceced3);
+  color: var(--font-100, #ffffff);
 }
-.site-footer__copy {
-  margin: 0;
+.coffee-pill__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 15rem;
+}
+.coffee-pill__title {
   font-size: var(--text-body);
-  line-height: 1.5;
+  color: var(--font-100, #ffffff);
+}
+.coffee-pill__sub {
   color: var(--nav-text, var(--font-300, #ceced3));
 }
 

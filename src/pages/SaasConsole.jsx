@@ -1,4 +1,5 @@
 import { CaseText, Metrics, P } from '../components/CaseStudy/CaseStudy'
+import { PaddedPicture } from '../components/PaddedPicture/PaddedPicture'
 import { ProjectSplit } from '../components/ProjectSplit/ProjectSplit'
 
 // From content/ibm-mcsp-iam/ibm-mcsp-iam-case-study.md: a two-sentence summary is the visible text, and the
@@ -6,18 +7,32 @@ import { ProjectSplit } from '../components/ProjectSplit/ProjectSplit'
 // Federal Regulations and Carbon pages. The pictures sit on the right in reading order.
 
 const IMAGES = {
-  intro: { src: '/images/mcsp-iam/001-iam.jpg', w: 2880, h: 2048, alt: 'An illustration of a person at a laptop, connected by lines and nodes to a browser window, a server, a phone and a settings gear.' },
-  console: { src: '/images/mcsp-iam/002-iam.jpg', w: 2880, h: 2048, alt: 'The IBM SaaS Console on a laptop: an Access management page with a list of users, and a user\'s details open in a panel over it, showing their assigned roles.' },
-  login: { src: '/images/mcsp-iam/008-iam.jpg', w: 2880, h: 2048, alt: 'An illustration of a person standing between a "Log in to IBM" form and a role picker, with cloud provider logos around them.' },
-  access: { src: '/images/mcsp-iam/005-iam.jpg', w: 2880, h: 2048, alt: 'An illustration of a person surrounded by orbiting people, a laptop with a shield, a server stack and an identity badge.' },
-  roles: { src: '/images/mcsp-iam/006-iam.jpg', w: 2880, h: 2048, alt: 'An illustration of a person giving a thumbs up, surrounded by six people, some marked as added, approved or blocked.' },
+  intro: { src: '/media/mcsp-iam/ibm-mcsp-iam-001.jpg', w: 2880, h: 2048, alt: 'An illustration of a person at a laptop, connected by lines and nodes to a browser window, a server, a phone and a settings gear.' },
+  console: { src: '/media/mcsp-iam/ibm-mcsp-iam-002.jpg', w: 2880, h: 2048, alt: 'The IBM SaaS Console on a laptop: an Access management page with a list of users, and a user\'s details open in a panel over it, showing their assigned roles.' },
+  login: { src: '/media/mcsp-iam/ibm-mcsp-iam-008.jpg', w: 2880, h: 2048, alt: 'An illustration of a person standing between a "Log in to IBM" form and a role picker, with cloud provider logos around them.' },
+  access: { src: '/media/mcsp-iam/ibm-mcsp-iam-005.jpg', w: 2880, h: 2048, alt: 'An illustration of a person surrounded by orbiting people, a laptop with a shield, a server stack and an identity badge.' },
+  roles: { src: '/media/mcsp-iam/ibm-mcsp-iam-006.jpg', w: 2880, h: 2048, alt: 'An illustration of a person giving a thumbs up, surrounded by six people, some marked as added, approved or blocked.' },
 }
+
+// Looping screen recordings (public/media/mcsp-iam), one per area of Access management, in the order they're introduced.
+const gif = (file, alt) => ({
+  component: <PaddedPicture src={`/media/mcsp-iam/${file}`} size={[1920, 1080]} ratio={[1920, 1080]} alt={alt} padding="3rem" />,
+})
+
+const RECORDINGS = [
+  gif('MCSP_Users_1080p_loop.gif', 'A screen recording of the Multi-Cloud SaaS Platform Users page: inviting, viewing and managing users.'),
+  gif('MCSP_UserGroups_1080p_loop.gif', 'A screen recording of the User groups page: creating a group and managing its members.'),
+  gif('MCSP_ServiceIDs_1080p_loop.gif', 'A screen recording of the Service IDs page: creating and managing service IDs.'),
+  gif('MCSP_APIKeys_1080p_loop.gif', 'A screen recording of the API keys page: creating and managing API keys.'),
+  gif('MCSP_InstanceDetails_1080p_loop.gif', 'A screen recording of an instance\'s details page.'),
+  gif('MCSP_Roles_1080p_loop.gif', 'A screen recording of the Roles page: viewing and assigning roles.'),
+]
 
 export function SaasConsole() {
   return (
     <ProjectSplit
       title="Multi-Cloud SaaS Platform"
-      media={[IMAGES.intro, IMAGES.console, IMAGES.login, IMAGES.access, IMAGES.roles]}
+      media={[IMAGES.intro, IMAGES.console, IMAGES.login, IMAGES.access, IMAGES.roles, ...RECORDINGS]}
     >
       <P>
         IBM’s Multi-cloud SaaS Platform gives administrators one place to manage accounts, subscriptions, identity,

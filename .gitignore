@@ -9,3 +9,6 @@ dist/
 # local environment
 .env
 .env.*
+
+# local tooling
+.wrangler/

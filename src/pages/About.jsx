@@ -1,74 +1,66 @@
 import { BentoCard } from '../components/BentoCard/BentoCard'
-import { bentoShapes } from '../lib/bentoShapes'
-import { seedFor } from '../lib/seed'
+import { Hero } from '../components/Hero/Hero'
 import { Typography } from '../components/Typography/Typography'
 
-// The nav's "Info" link lands here. A heading, then a photo bento on the homepage's grid
+// The nav's "Info" link lands here. Full width, laid out like the homepage: the intro line is the page's
+// <h1> (header-1, a 60rem measure), then a photo bento on the homepage's grid
 // (the same six cells a–f, each with its own generated outline), arranged as
 //   d small portrait  a wide (rock spires)
 //   c large text      b tall (sushi, framed whole on grey-700 with 1rem at each side)
 //   f wide (orbit diagram)  e small (the pug)
-// The heading is the intro line (an <h2>; the page's <h1> is the visually hidden "Info"); the text card carries the rest of v2's text cards as paragraphs
+// The text card carries the rest of v2's text cards as paragraphs
 // (same copy, same order).
 const TEXT = [
-  "I've worked at various early-stage companies, start-ups, and enterprises like IBM, Hewlett-Packard, Radar, FiscalNote, and many more.",
-  'These days my work focuses on strategy, radical thinking, and systems design. I design by tapping into our shared visceral, innate feelings, challenging assumptions, and grounding ideas in reality — turning intent into lasting, practical outcomes.',
-  '감사합니다',
+  "I was born in Seoul, South Korea, and adopted. I grew up in Minnesota with a bucket of crayons, Lego, and sci-fi mystery books. I'm fond of baking, hiking, and coffee. After living in six states, I'm now in Austin with my pug, working as a designer at IBM.",
+  "I've worked at early-stage companies, start-ups, and enterprises like Hewlett-Packard, Radar, and FiscalNote.",
+  'These days my work focuses on strategy, radical thinking, and systems design. I design by tapping into our shared visceral, innate feelings, challenging assumptions, and grounding ideas in reality, turning intent into lasting, practical outcomes.',
+  <p lang="ko">감사합니다</p>,
 ]
-
-const SHAPES = bentoShapes(seedFor('about'))
 
 export function About() {
   return (
-    <main id="main-content">
-      <h1 className="sr-only">Info</h1>
+    <main id="main-content" className="about page--full">
       <div className="site-shell site-shell--body site-shell--end">
         <div className="content">
-          <div className="about__card--page">
-            <div className="about__body-wrap">
-              <Typography variant="header-2">
-                Currently residing in Texas, I'm a lead designer and developer with over 15 years of
-                experience crafting unique experiences.
-              </Typography>
+          <Hero />
+
+          <div className="bento-wrap">
+            <div className="bento-12 bento-12--info">
+              <BentoCard area="c" shape="about-c" body={TEXT} />
+              <BentoCard
+                area="b"
+                shape="about-b"
+                image="/media/info/info-headshot-padded.jpg"
+                alt="A black-and-white portrait of Trent in a dark button-up shirt and glasses, looking off to the side with his hands clasped at his wrist."
+                imagePosition="50% 20%"
+                crt={false}
+              />
             </div>
           </div>
 
+          {/* Moved here from the Work page: the writing and the teaching, two small cards. */}
+          <Typography as="h3" variant="header-3" className="bento-section-title">
+            Writing, coaching, and teaching
+          </Typography>
           <div className="bento-wrap">
-            <div className="bento bento--info">
+            <div className="bento-more">
               <BentoCard
-                area="d" shapeVars={SHAPES.d}
-                image="/images/info/me-portrait.png"
-                alt="A pixel-art portrait of Trent wearing round glasses"
-                imagePosition="50% 91%"
-                className="card--illustration"
+                area="j"
+                shape="work-j"
+                to="/coaching-and-teaching"
+                title="Coaching and teaching"
+                image="/media/coachteach/coaching-and-teaching-spring-2024.jpg"
+                alt="The spring 2024 cohort gathered around a whiteboard as one student points out a note."
+                crt={false}
               />
               <BentoCard
-                area="a"
-                shapeVars={SHAPES.a}
-                image="/images/info/IMG_2815-wide.jpg"
-                alt="Tall granite spires and pine trees under a clear blue sky."
-              />
-              <BentoCard area="c" shapeVars={SHAPES.c} body={TEXT} />
-              <BentoCard
-                area="b"
-                shapeVars={{ ...SHAPES.b, '--card-fill': 'var(--grey-700, #232426)' }}
-                image="/images/info/sushi.jpg"
-                alt="A single piece of nigiri topped with green herbs on a green ceramic plate at a sushi counter, with chefs blurred behind it."
-                inset="1rem"
-                ratio={[1200, 1600]}
-              />
-              <BentoCard
-                area="f"
-                shapeVars={SHAPES.f}
-                image="/images/info/tile-02.jpg"
-                alt="A technical diagram of concentric orbits around a degree scale, with a red dashed trajectory ending at a circled point, a cyan “Lower orbit” label, and notes on payload, fuel, acceleration and exhaustion momentum."
-              />
-              <BentoCard
-                area="e"
-                shapeVars={SHAPES.e}
-                image="/images/info/IMG_2405.jpg"
-                alt="A fawn pug with a black mask lying on the arm of a dark couch, looking at the camera"
-                imagePosition="42% 40%"
+                area="n"
+                shape="work-n"
+                to="/job-hunt"
+                title="Design your job hunt"
+                image="/media/job-hunt/job-hunt-resume.png"
+                alt="A 2011 résumé: a black circle with the initials TL beside the name Trent Lutmer, web and graphic designer, above sections for objective, software proficiencies, extracurricular activities, experience, education and skills."
+                crt={false}
               />
             </div>
           </div>

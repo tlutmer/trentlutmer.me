@@ -2,7 +2,7 @@
 // Kelex Design System — Typography component
 // Fetched from Figma styles: "Plex Mono/*" text styles
 //
-// Scale (from Figma):
+// Scale (from Figma) — the sizes live in index.css, one `.type--<variant>` class each:
 //   label     12.8px  weight 400  — UI labels, captions
 //   paragraph 16px    weight 400  — body text
 //   header-3  20.8px  weight 400
@@ -18,22 +18,6 @@
 //   display-1 258px   weight 400
 //
 // All styles use IBM Plex Mono, line-height INTRINSIC (~1.3x size)
-
-const STYLES = {
-  'label':      { fontSize: 12.8,  lineHeight: 1.3 },
-  'paragraph':  { fontSize: 16,    lineHeight: 1.3 },
-  'header-3':   { fontSize: 20.8,  lineHeight: 1.3 },
-  'header-2':   { fontSize: 24,    lineHeight: 1.3 },
-  'header-1':   { fontSize: 32,    lineHeight: 1.3 },
-  'subtitle-3': { fontSize: 36,    lineHeight: 1.3 },
-  'subtitle-2': { fontSize: 44,    lineHeight: 1.3 },
-  'subtitle-1': { fontSize: 64,    lineHeight: 1.3 },
-  'title-3':    { fontSize: 86,    lineHeight: 1.3 },
-  'title-2':    { fontSize: 96,    lineHeight: 1.3 },
-  'title-1':    { fontSize: 130,   lineHeight: 1.3 },
-  'display-2':  { fontSize: 172,   lineHeight: 1.3 },
-  'display-1':  { fontSize: 258,   lineHeight: 1.3 },
-}
 
 const TAG_MAP = {
   'label':      'span',
@@ -51,32 +35,10 @@ const TAG_MAP = {
   'display-1':  'h1',
 }
 
-export function Typography({
-  variant = 'paragraph',
-  as,
-  children,
-  className = '',
-  style = {},
-}) {
-  const spec = STYLES[variant] ?? STYLES.paragraph
+export function Typography({ variant = 'paragraph', as, children, className = '' }) {
   const Tag = as ?? TAG_MAP[variant] ?? 'span'
 
-  return (
-    <Tag
-      className={['font-mono', className].filter(Boolean).join(' ')}
-      style={{
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: spec.fontSize,
-        fontWeight: 400,
-        lineHeight: spec.lineHeight,
-        margin: 0,
-        ...style,
-      }}
-    >
-      {children}
-    </Tag>
-  )
+  return <Tag className={['type', `type--${variant}`, className].filter(Boolean).join(' ')}>{children}</Tag>
 }
 
-export { STYLES as TYPOGRAPHY_STYLES }
 export default Typography

@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "shapes": "node scripts/generate-shapes.mjs",
+    "hazard-banner": "node scripts/generate-hazard-banner.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

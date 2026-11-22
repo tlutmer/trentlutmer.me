@@ -16,17 +16,33 @@ body {
 }
 
 body {
+  /* Fluid type: 16px / 12.8px on a phone, rising smoothly to 18px / 15px by ~1500px wide, so text
+     keeps its proportion on big monitors. Everything on --text-body / --text-label (nav, footer,
+     captions, tags) follows. The floor is never below 16px for body copy. */
+  --text-body: clamp(1rem, 0.94rem + 0.2vw, 1.125rem);
+  --text-label: clamp(0.8125rem, 0.76rem + 0.17vw, 0.9375rem);
   min-height: 100dvh;
   color: var(--text, #e3e3e5);
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: var(--text-body);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-weight: 400;
   line-height: 1.3;
+  /* Reserves room at the bottom for the floating coffee pill (see .coffee-pill in site-nav.css) so it
+     never covers the last of a page's content. */
+  padding: 2rem 2rem 6.5rem;
 }
 
+/* The focus ring is the theme's brightest text (--font-100), so it shows on every colour theme. */
 :focus-visible {
-  outline: 2px solid var(--cyan-300, #00fff2);
-  outline-offset: 3px;
+  outline: 0.125rem solid var(--font-100, #ffffff);
+  outline-offset: 0.1875rem;
+}
+/* Things that only take focus from a script (a page's <h1> or <main> after a route change or the
+   skip link) aren't controls; a ring round a whole heading or page would only be noise. */
+[tabindex='-1']:focus {
+  outline: none;
 }
 
 /* ── Bento ──
@@ -39,7 +55,7 @@ body {
 
    Each card's silhouette is a generated clip-path (card-shapes.css) whose
    chamfers scale with --k, "one design px at the current layout size":
-   --k is min(1px, cell / 347) — 347 being the Figma cell — so the shapes
+   --k is min(0.0625rem, cell / 347) — 347 being the Figma cell — so the shapes
    are pixel-true at full size and shrink proportionally with the cells
    instead of distorting. `.bento-wrap` is the size container, so the layout
    responds to its own width, not the viewport.
@@ -49,30 +65,12 @@ body {
 @property --k {
   syntax: '<length>';
   inherits: true;
-  initial-value: 1px;
+  initial-value: 0.0625rem;
 }
 
 .bento-wrap {
   container-type: inline-size;
   container-name: bento;
-}
-
-.bento {
-  --gap: 2.5rem;
-  --unit: calc((100cqw - 2 * var(--gap)) / 3);
-  --k: min(1px, calc(var(--unit) / 347));
-  --card-fill: var(--grey-900, #000000);
-  --card-edge: var(--grey-200, #e3e3e5);
-
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: var(--unit);
-  grid-template-areas:
-    'a a b'
-    'c c b'
-    'c c d'
-    'e f f';
-  gap: var(--gap);
 }
 
 .card {
@@ -81,24 +79,188 @@ body {
   min-height: 0;
 }
 
-/* The Info page's arrangement: small + wide, text + tall, wide + small. Same six
-   cells (a–f), so the same shape boxes apply — only the placement differs. */
-.bento--info {
+/* ── Home bento: a 12-column grid ──
+   Twelve columns with 2rem gutters between them (and 2rem side margins on the page), 2.5rem between
+   rows. A cell is four columns wide, so each card spans the same share of the width as its 3-column
+   cell did, and the shapes and placement carry over. The Info page keeps the 3-column `.bento`. */
+.bento-12 {
+  --gutter: 2rem;
+  --row-gap: 2.5rem;
+  --col: calc((100cqw - 11 * var(--gutter)) / 12);
+  --unit: calc(4 * var(--col) + 3 * var(--gutter));
+  --k: min(0.0625rem, calc(var(--unit) / 347));
+  --card-fill: var(--grey-900, #000000);
+  --card-edge: var(--grey-200, #e3e3e5);
+
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: var(--unit);
   grid-template-areas:
-    'd a a'
-    'c c b'
-    'c c b'
-    'f f e';
+    'a a a a a a a a b b b b'
+    'c c c c c c c c b b b b'
+    'c c c c c c c c d d d d'
+    'e e e e f f f f f f f f'
+    'g g g g g g g g h h h h'
+    'g g g g g g g g h h h h';
+  column-gap: var(--gutter);
+  row-gap: var(--row-gap);
 }
 
-/* Placement is bento-only: the same .card--a–f classes also supply silhouettes
-   to the coffee grid, which flows freely and must not inherit these areas. */
-.bento .card--a { grid-area: a; }
-.bento .card--b { grid-area: b; }
-.bento .card--c { grid-area: c; }
-.bento .card--d { grid-area: d; }
-.bento .card--e { grid-area: e; }
-.bento .card--f { grid-area: f; }
+.bento-12 .card--a { grid-area: a; }
+.bento-12 .card--b { grid-area: b; }
+.bento-12 .card--c { grid-area: c; }
+.bento-12 .card--d { grid-area: d; }
+.bento-12 .card--e { grid-area: e; }
+.bento-12 .card--f { grid-area: f; }
+.bento-12 .card--g { grid-area: g; }
+.bento-12 .card--h { grid-area: h; }
+
+/* Below 760px: two columns of six, the same arrangement as the 3-column bento's two-column layout. */
+@container bento (max-width: 47.4375rem) {
+  .bento-12 {
+    --unit: calc((100cqw - var(--gutter)) / 2);
+    grid-template-areas:
+      'a a a a a a a a a a a a'
+      'b b b b b b d d d d d d'
+      'b b b b b b e e e e e e'
+      'c c c c c c c c c c c c'
+      'c c c c c c c c c c c c'
+      'f f f f f f f f f f f f'
+      'g g g g g g g g g g g g'
+      'g g g g g g g g g g g g'
+      'h h h h h h h h h h h h'
+      'h h h h h h h h h h h h';
+  }
+}
+
+/* Info page: the same 12-column bento, arranged as the 3-column Info layout was (small + wide, text +
+   tall, wide + small). Only at widths where the 3-column arrangement applies; the narrower layouts
+   above take the shared two-column and one-column placements. */
+@container bento (min-width: 47.5rem) {
+  .bento-12--info {
+    grid-template-areas:
+      'c c c c c c b b b b b b'
+      'c c c c c c b b b b b b';
+  }
+}
+@media (max-width: 37.5rem) {
+  .bento-12--info .card:not(.card--c) {
+    display: none;
+  }
+  .bento-12--info .card--c {
+    grid-area: auto;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+/* Below 480px: one column, each card at its own aspect ratio (the .card--* ratios above). */
+@container bento (max-width: 29.9375rem) {
+  .bento-12 {
+    --k: min(0.0625rem, calc(100cqw / 600));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    grid-auto-rows: auto;
+  }
+
+  .bento-12 .card--a,
+  .bento-12 .card--b,
+  .bento-12 .card--c,
+  .bento-12 .card--d,
+  .bento-12 .card--e,
+  .bento-12 .card--f,
+  .bento-12 .card--g,
+  .bento-12 .card--h {
+    grid-area: auto;
+  }
+}
+
+/* ── Home bento, split in two ──
+   The Work page in two sections instead of one eight-card grid: "Personal work" (.bento-featured —
+   Kelex large, Fartlek and Kelor small and stacked beside it) above "Professional work"
+   (.bento-more — a 3-column grid of small cells, letters i–n, filled in DOM order). Same custom
+   properties as .bento-12 (so the single-column fallback's per-letter aspect ratios below still
+   apply), just two smaller grids instead of one — each its own .bento-wrap container, so letters
+   don't collide between them. */
+.bento-featured,
+.bento-more {
+  --gutter: 2rem;
+  --row-gap: 2.5rem;
+  --col: calc((100cqw - 11 * var(--gutter)) / 12);
+  --unit: calc(4 * var(--col) + 3 * var(--gutter));
+  --k: min(0.0625rem, calc(var(--unit) / 347));
+  --card-fill: var(--grey-900, #000000);
+  --card-edge: var(--grey-200, #e3e3e5);
+
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: var(--unit);
+  column-gap: var(--gutter);
+  row-gap: var(--row-gap);
+}
+/* Clear air above "Professional work" — it's the only .bento-section-title that follows a
+   .bento-wrap directly ("Personal work" follows the headline instead). */
+.bento-wrap + .bento-section-title {
+  margin-top: 7rem;
+}
+
+/* Personal work: Kelex (large) first, Fartlek and Kelor (small) stacked beside it. */
+.bento-featured {
+  grid-template-areas:
+    'c c c c c c c c d d d d'
+    'c c c c c c c c e e e e';
+}
+.bento-featured .card--c { grid-area: c; }
+.bento-featured .card--d { grid-area: d; }
+.bento-featured .card--e { grid-area: e; }
+
+@container bento (max-width: 47.4375rem) {
+  .bento-featured {
+    --unit: calc((100cqw - var(--gutter)) / 2);
+    grid-template-areas:
+      'c c c c c c c c c c c c'
+      'd d d d d d e e e e e e';
+  }
+}
+@container bento (max-width: 29.9375rem) {
+  .bento-featured {
+    --k: min(0.0625rem, calc(100cqw / 600));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: none;
+    grid-auto-rows: auto;
+  }
+  .bento-featured .card--c,
+  .bento-featured .card--d,
+  .bento-featured .card--e {
+    grid-area: auto;
+  }
+}
+
+/* Professional work: a 3-column grid of equal small cells (the size of Personal work's
+   Fartlek/Kelor), six cards in DOM order — two full rows of three. No named
+   areas: three equal fr columns at --gutter apart come out to exactly --unit wide, the same math
+   as a 4-of-12-column cell, so the cells are perfect squares without needing the 12-column track
+   .bento-featured uses. */
+.bento-more {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: var(--unit);
+}
+
+@container bento (max-width: 47.4375rem) {
+  .bento-more {
+    --unit: calc((100cqw - var(--gutter)) / 2);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: var(--unit);
+  }
+}
+@container bento (max-width: 29.9375rem) {
+  .bento-more {
+    --k: min(0.0625rem, calc(100cqw / 600));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+  }
+}
 
 /* Outline layer: the full silhouette in the edge color. */
 .card__frame {
@@ -119,7 +281,7 @@ body {
 }
 
 /* Before a card's reveal plays (see BentoCard), both layers are hidden; the
-   effect drives their opacity from there, then hands over to the resting state. */
+   reveal below takes them from there, then hands over to the resting state. */
 .card[data-reveal='pending'] .card__frame,
 .card[data-reveal='pending'] .card__ring,
 .card[data-reveal='pending'] .card__inner {
@@ -139,8 +301,113 @@ body {
   pointer-events: none;
 }
 
+/* ── Card reveal ("stroke n' fade") ──
+   The first time a card scrolls into view (BentoCard's data-reveal goes pending → revealing → done)
+   its 1px outline draws itself around its silhouette while the card fades in, then the outline
+   drops away to the permanent border. Ported frame for frame from the original effect: the
+   timings are its (1070ms in all), the dash frames are its 26 keyframes, in units of the path's
+   pathLength (256), so one set of keyframes fits an outline of any length. */
+.card[data-reveal='revealing'] .card__ring {
+  opacity: 0;
+}
+/* The fill fades in from 400ms to 1070ms... */
+.card[data-reveal='revealing'] .card__inner {
+  animation: card-reveal-fade 670ms linear 400ms both;
+}
+/* ...and the permanent border takes over from the drawn outline at 1070ms. */
+.card[data-reveal='revealing'] .card__frame {
+  animation: card-reveal-border 1070ms steps(1, end) both;
+}
+/* The drawn outline: invisible until 70ms, dashes growing 70–900ms, gone at 1070ms. */
+.card[data-reveal='revealing'] .card__stroke path {
+  animation:
+    card-reveal-draw 1070ms linear both,
+    card-reveal-visible 1070ms steps(1, end) both;
+}
+@keyframes card-reveal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes card-reveal-border {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes card-reveal-visible {
+  0% { opacity: 0; }
+  6.5421% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes card-reveal-draw {
+  0% { stroke-dasharray: 0 256; stroke-dashoffset: -64; }
+  6.5421% { stroke-dasharray: 0 256; stroke-dashoffset: -64; }
+  9.3458% { stroke-dasharray: 33 223; stroke-dashoffset: -88; }
+  12.1495% { stroke-dasharray: 58 198; stroke-dashoffset: -107; }
+  15.8879% { stroke-dasharray: 79 177; stroke-dashoffset: -123; }
+  18.6916% { stroke-dasharray: 99 157; stroke-dashoffset: -136; }
+  21.4953% { stroke-dasharray: 115 141; stroke-dashoffset: -149; }
+  25.2336% { stroke-dasharray: 130 126; stroke-dashoffset: -160; }
+  28.0374% { stroke-dasharray: 144 112; stroke-dashoffset: -170; }
+  30.8411% { stroke-dasharray: 155 101; stroke-dashoffset: -180; }
+  34.5794% { stroke-dasharray: 167 89; stroke-dashoffset: -188; }
+  37.3832% { stroke-dasharray: 178 78; stroke-dashoffset: -195; }
+  40.1869% { stroke-dasharray: 187 69; stroke-dashoffset: -202; }
+  43.9252% { stroke-dasharray: 195 61; stroke-dashoffset: -209; }
+  46.729% { stroke-dasharray: 203 53; stroke-dashoffset: -215; }
+  49.5327% { stroke-dasharray: 210 46; stroke-dashoffset: -220; }
+  53.271% { stroke-dasharray: 217 39; stroke-dashoffset: -225; }
+  56.0748% { stroke-dasharray: 222 34; stroke-dashoffset: -229; }
+  58.8785% { stroke-dasharray: 228 28; stroke-dashoffset: -233; }
+  62.6168% { stroke-dasharray: 232 24; stroke-dashoffset: -237; }
+  65.4206% { stroke-dasharray: 237 19; stroke-dashoffset: -240; }
+  68.2243% { stroke-dasharray: 240 16; stroke-dashoffset: -243; }
+  71.9626% { stroke-dasharray: 243 13; stroke-dashoffset: -246; }
+  74.7664% { stroke-dasharray: 247 9; stroke-dashoffset: -248; }
+  77.5701% { stroke-dasharray: 249 7; stroke-dashoffset: -250; }
+  81.3084% { stroke-dasharray: 250 6; stroke-dashoffset: -252; }
+  84.1121% { stroke-dasharray: 250 6; stroke-dashoffset: -252; }
+  100% { stroke-dasharray: 250 6; stroke-dashoffset: -252; }
+}
+
 /* The outline that draws itself during the reveal — sized to the card, its
    viewBox set to the card's pixel size so 1 unit = 1px. */
+.card__stroke path {
+  opacity: 0;
+}
+
+/* ── Card border hover blink ──
+   Hovering (or keyboard-focusing) a settled card blinks its 1px outline — a dip toward black and
+   back, twice — before settling on its resting edge colour, ported from a supplied reference
+   effect (a small swatch that blinks once on mount). Its literal hex colours map to the closest
+   Kelex tokens: #59575a (the mid dip) -> grey-600, #0c0c0e (the dark dip) -> grey-800 — both
+   already theme-aware (in the coloured themes the whole grey ramp is a tint of that theme's own
+   colour, so the dip stays in the card's own family instead of turning a flat grey); its own
+   resting #c9c9cb is this card's resting border, so both of its "back to rest" steps are
+   --card-edge itself. steps(1, jump-end) (same as steps(1, end)) makes every change a hard cut, as
+   in the reference, at its own 266.667ms duration and 25%-apart timing. Both border layers
+   (.card__frame behind the picture, .card__ring on top of it) blink together. Only on a card that
+   has finished its own reveal, so the two animations never overlap. */
+.card[data-reveal='done']:hover .card__frame,
+.card[data-reveal='done']:hover .card__ring,
+.card[data-reveal='done']:focus-visible .card__frame,
+.card[data-reveal='done']:focus-visible .card__ring {
+  animation: card-border-blink 266.667ms steps(1, jump-end);
+}
+@keyframes card-border-blink {
+  0% { background: var(--grey-600); }
+  25% { background: var(--grey-800); }
+  50% { background: var(--card-edge); }
+  75% { background: var(--grey-600); }
+  100% { background: var(--card-edge); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card[data-reveal='done']:hover .card__frame,
+  .card[data-reveal='done']:hover .card__ring,
+  .card[data-reveal='done']:focus-visible .card__frame,
+  .card[data-reveal='done']:focus-visible .card__ring {
+    animation: none;
+  }
+}
+
 .card__stroke {
   position: absolute;
   inset: 0;
@@ -158,6 +425,16 @@ body {
   top: 50%;
   transform: translateY(-50%);
 }
+/* A framed card sets its picture in from the sides (BentoCard's `framed`); the box takes the
+   picture's own height from its width and proportions. */
+.card--framed .card__media-box {
+  left: 1rem;
+  right: 1rem;
+}
+.card__media-box .card__media {
+  position: static;
+  height: auto;
+}
 
 .card__media {
   position: absolute;
@@ -166,6 +443,36 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* How a picture sits in its card (BentoCard's `fit` and `imagePosition`): cover and the centre are the
+   defaults; these are the other values the site uses. */
+.card__media--contain {
+  object-fit: contain;
+}
+.card__media--pos-50-20 {
+  object-position: 50% 20%;
+}
+.card__media--pos-50-35 {
+  object-position: 50% 35%;
+}
+.card__media--pos-50-91 {
+  object-position: 50% 91%;
+}
+.card__media--pos-42-40 {
+  object-position: 42% 40%;
+}
+
+/* Card fills other than the theme's own (BentoCard's `fill`). */
+/* These have to beat `.project-media .card`'s theme fill, which comes later in the file. */
+.card.card--fill-logo,
+.project-media .card.card--fill-logo {
+  /* A literal, not a theme token: it has to match the Kelex logo image's own background in every theme. */
+  --card-fill: #232426;
+}
+.card.card--fill-panel,
+.project-media .card.card--fill-panel {
+  --card-fill: var(--grey-700, #232426);
 }
 
 /* The pixel portrait is black-on-white; a white card fill lets it sit edge to
@@ -182,8 +489,8 @@ body {
   inset: auto 0 0 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: calc(22 * var(--k) + 12px) calc(26 * var(--k) + 12px);
+  gap: 0.375rem;
+  padding: calc(22 * var(--k) + 0.75rem) calc(26 * var(--k) + 0.75rem);
 }
 
 .card__title {
@@ -202,33 +509,70 @@ body {
   color: #ffffff;
 }
 
-/* The Work page's own text (the headline and the card titles) is the theme's 300 step. The nav
-   has its own colours (see site-nav.css). */
-.home .about__headline,
-.home .card .card__title {
+/* A card's tag (BentoCard `tag`): a company or client name under the title, at the label size, in the
+   theme's 300 text step — the same colour on every card, whether or not it sits over a picture. */
+.card__tag {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.3;
   color: var(--font-300, #ceced3);
 }
 
-/* A card title sits on a chip of grey-900 at 64% (the theme's page colour in the coloured
-   themes); the negative margin cancels the padding so the text stays where it was.
+/* On the Work page a tag sits directly under its card's title, on the same solid chip, so the two read
+   as one block: no gap between them, and the title's chip doesn't pad its bottom edge. */
+
+/* The Work page's own text (the headline, section titles) and the card captions on the Work and Info
+   pages are the theme's 300 step. The nav has its own colours (see site-nav.css). */
+:is(.home, .about) .about__headline,
+.home .bento-section-title,
+:is(.home, .about) .card .card__caption {
+  color: var(--font-300, #ceced3);
+}
+/* Sits right above its bento-wrap, clear of the headline above it. */
+.bento-section-title {
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+}
+/* The title and tag take the caption's colour, so the hover shuffle below turns both at once. */
+:is(.home, .about) .card .card__caption .card__title,
+:is(.home, .about) .card .card__caption .card__tag {
+  color: inherit;
+}
+
+/* A card title sits on a solid chip of grey-900 (the theme's page colour in the coloured themes).
+   Measured on the pixels behind the letters, at 64% the light pictures (Coaching, Carbon Libraries,
+   SaaS Console) show through enough to drop the caption to ~1.7:1-2.2:1 in the worst theme
+   (magenta); even 90% is still ~3.7:1. Only a solid chip clears WCAG AA's 4.5:1 on every card in
+   all four themes (worst case 4.68:1, magenta). Lower --caption-chip-opacity (e.g. 64%) to bring
+   the see-through look back, at the cost of that contrast on those cards. */
+.home,
+.about {
+  --caption-chip-opacity: 100%;
+}
+
+/* The negative margin cancels the chip's padding so the text stays where it was.
 
    Hovering (or keyboard-focusing) the card plays the "shuffle" motion over the whole caption:
    stepped frames, no tweening — empty, then a box with an X (270ms), a solid block with warning
    marks (400ms), diagonal stripes (530ms) and finally solid (670ms), where it stays. The chip's
    ::before draws the frames; the text flips between the theme's 300 and 900 steps so it reads
    on each. steps(1, end) holds every keyframe until the next one. */
-.home .card .card__title {
+/* The caption is the title and tag together, on one chip (the title and tag inside it have none). */
+:is(.home, .about) .card .card__caption {
   --shuffle-fg: var(--font-300, #ceced3);
   --shuffle-bg: var(--grey-900, #000000);
+  display: flex;
+  flex-direction: column;
   position: relative;
   isolation: isolate;
   align-self: flex-start;
-  padding: 2px 6px;
-  margin: -2px -6px;
-  background: color-mix(in srgb, var(--shuffle-bg) 64%, transparent);
+  padding: 0.125rem 0.375rem;
+  margin: -0.125rem -0.375rem;
+  background: color-mix(in srgb, var(--shuffle-bg) var(--caption-chip-opacity), transparent);
 }
 
-.home .card .card__title::before {
+:is(.home, .about) .card .card__caption::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -236,13 +580,13 @@ body {
   pointer-events: none;
 }
 
-.home .card:hover .card__title,
-.home .card:focus-visible .card__title {
+:is(.home, .about) .card:hover .card__caption,
+:is(.home, .about) .card:focus-visible .card__caption {
   animation: caption-shuffle-text 670ms steps(1, end) forwards;
 }
 
-.home .card:hover .card__title::before,
-.home .card:focus-visible .card__title::before {
+:is(.home, .about) .card:hover .card__caption::before,
+:is(.home, .about) .card:focus-visible .card__caption::before {
   animation: caption-shuffle 670ms steps(1, end) forwards;
 }
 
@@ -254,21 +598,21 @@ body {
   /* 270ms — an outlined box with an X through it */
   40.299% {
     background:
-      linear-gradient(to top right, transparent calc(50% - 1px), var(--shuffle-fg) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-      linear-gradient(to bottom right, transparent calc(50% - 1px), var(--shuffle-fg) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
-    box-shadow: inset 0 0 0 2px var(--shuffle-fg);
+      linear-gradient(to top right, transparent calc(50% - 0.0625rem), var(--shuffle-fg) calc(50% - 0.0625rem) calc(50% + 0.0625rem), transparent calc(50% + 0.0625rem)),
+      linear-gradient(to bottom right, transparent calc(50% - 0.0625rem), var(--shuffle-fg) calc(50% - 0.0625rem) calc(50% + 0.0625rem), transparent calc(50% + 0.0625rem));
+    box-shadow: inset 0 0 0 0.125rem var(--shuffle-fg);
   }
   /* 400ms — a solid block with an exclamation mark cut out of it */
   59.701% {
     background:
-      linear-gradient(var(--shuffle-bg), var(--shuffle-bg)) 50% calc(50% - 3.5px) / 3px 11px no-repeat,
-      linear-gradient(var(--shuffle-bg), var(--shuffle-bg)) 50% calc(50% + 6.5px) / 3px 3px no-repeat,
+      linear-gradient(var(--shuffle-bg), var(--shuffle-bg)) 50% calc(50% - 0.21875rem) / 0.1875rem 0.6875rem no-repeat,
+      linear-gradient(var(--shuffle-bg), var(--shuffle-bg)) 50% calc(50% + 0.40625rem) / 0.1875rem 0.1875rem no-repeat,
       var(--shuffle-fg);
     box-shadow: none;
   }
   /* 530ms — 2px diagonal stripes, 13px apart */
   79.104% {
-    background: repeating-linear-gradient(135deg, transparent 0 7.2px, var(--shuffle-fg) 7.2px 9.2px);
+    background: repeating-linear-gradient(135deg, transparent 0 0.45rem, var(--shuffle-fg) 0.45rem 0.575rem);
     box-shadow: none;
   }
   /* 670ms — solid, and it stays */
@@ -292,134 +636,35 @@ body {
 
 /* No motion: hovering goes straight to the solid end state. */
 @media (prefers-reduced-motion: reduce) {
-  .home .card:hover .card__title,
-  .home .card:focus-visible .card__title {
+  :is(.home, .about) .card:hover .card__caption,
+  :is(.home, .about) .card:focus-visible .card__caption {
     animation: none;
     color: var(--shuffle-bg);
   }
-  .home .card:hover .card__title::before,
-  .home .card:focus-visible .card__title::before {
+  :is(.home, .about) .card:hover .card__caption::before,
+  :is(.home, .about) .card:focus-visible .card__caption::before {
     animation: none;
     background: var(--shuffle-fg);
   }
 }
 
-@container bento (max-width: 759px) {
-  .bento {
-    --unit: calc((100cqw - var(--gap)) / 2);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas:
-      'a a'
-      'b d'
-      'b e'
-      'c c'
-      'c c'
-      'f f';
-  }
-}
-
-@container bento (max-width: 759px) {
-  .bento--info {
-    grid-template-areas:
-      'a a'
-      'b d'
-      'b e'
-      'c c'
-      'c c'
-      'f f';
-  }
-}
-
-@container bento (max-width: 479px) {
-  .bento {
-    --k: min(1px, calc(100cqw / 600));
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: none;
-    grid-auto-rows: auto;
-  }
-
-  .bento .card--a,
-  .bento .card--b,
-  .bento .card--c,
-  .bento .card--d,
-  .bento .card--e,
-  .bento .card--f {
-    grid-area: auto;
-  }
-
+/* The one-column layout's per-card ratios (the cards' classes are their areas, see .bento-12). */
+@container bento (max-width: 29.9375rem) {
   .card--a,
   .card--f { aspect-ratio: 16 / 10; }
-  .card--b { aspect-ratio: 3 / 4; }
+  .card--b,
+  .card--h { aspect-ratio: 3 / 4; }
   .card--c,
   .card--d,
-  .card--e { aspect-ratio: 1 / 1; }
-}
-
-/* Info page on a phone: only the text card (c) stays — the pictures and blank cards are hidden. The
-   grid becomes one plain column, because the bento's named areas would otherwise still reserve a
-   fixed-height row for each hidden card. */
-@media (max-width: 600px) {
-  .bento--info {
-    --k: min(1px, calc(100cqw / 600));
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: none;
-    grid-auto-rows: auto;
-  }
-
-  .bento--info .card:not(.card--c) {
-    display: none;
-  }
-
-  .bento--info .card--c {
-    grid-area: auto;
-    aspect-ratio: 1 / 1;
-  }
-}
-
-/* ── Coffee roast grid ──
-   Same outlined cards as the bento, in a plain grid: 4 columns, then 2, then 1
-   as its own width narrows. --k is derived from the card width the same way
-   (min(1px, card / 347)) so the chamfers scale with the cards, and the photos
-   are 2:3 portraits, so the cards are 3:4. On phones it gets the same 40px
-   side padding as the bento. */
-.roasts-wrap {
-  container-type: inline-size;
-  container-name: roasts;
-}
-
-@media (max-width: 600px) {
-  .roasts-wrap {
-    padding-inline: 40px;
-  }
-}
-
-.roasts {
-  --gap: 2.5rem;
-  --cols: 4;
-  --unit: calc((100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols));
-  --k: min(1px, calc(var(--unit) / 347));
-  --card-fill: var(--grey-900, #000000);
-  --card-edge: var(--grey-200, #e3e3e5);
-
-  display: grid;
-  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-  gap: var(--gap);
-}
-
-.roasts .card {
-  aspect-ratio: 3 / 4;
-}
-
-@container roasts (max-width: 899px) {
-  .roasts {
-    --cols: 2;
-  }
-}
-
-@container roasts (max-width: 479px) {
-  .roasts {
-    --cols: 1;
-  }
+  .card--e,
+  .card--g,
+  .card--i,
+  .card--j,
+  .card--k,
+  .card--l,
+  .card--m,
+  .card--n,
+  .card--o { aspect-ratio: 1 / 1; }
 }
 
 /* A card that is a router link (the Fartlek and Kelex cards on Home). */
@@ -454,7 +699,19 @@ body {
 }
 
 .card--plain .card__inner {
-  inset: 1px;
+  inset: 0.0625rem;
+}
+
+/* The 1px outline, drawn again on top as a real border. A picture that keeps its own proportions
+   ends on a fractional pixel, and the picture could round over the frame's bottom or right edge
+   and clip the outline; a border snaps to whole device pixels and always paints in full. */
+.card--plain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 0.0625rem solid var(--card-edge);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* ── Project pages ──
@@ -463,6 +720,28 @@ body {
   --card-fill: var(--grey-900, #000000);
   --card-edge: var(--grey-200, #e3e3e5);
   aspect-ratio: 16 / 9;
+}
+
+/* A project-page media entry that's a live component instead of a picture/video (ProjectSplit's
+   `{ component }`). With no `ratio` it sizes to its own content, like KelexButtonDemo's vertical
+   stack; with one it takes that aspect ratio, like the picture cards beside it. */
+.project-media__component {
+  width: 100%;
+}
+
+/* A project-page card that keeps its picture's own proportions (BentoCard's `size`): the picture is in
+   the flow, its width and height attributes give the card its height, and the card wraps it. */
+.project-media .card--natural {
+  aspect-ratio: auto;
+}
+.card--natural .card__inner {
+  position: relative;
+  inset: auto;
+  margin: 0.0625rem;
+}
+.card--natural .card__media {
+  position: static;
+  height: auto;
 }
 
 /* A text-only card: the paragraphs sit centered in the card, clear of the corner
@@ -481,7 +760,7 @@ body {
    top/bottom only needs to clear a chamfer or a shallower notch. */
 .card__body,
 .card__sizer {
-  padding: calc(24 * var(--k) + 12px) calc(44 * var(--k) + 12px);
+  padding: calc(24 * var(--k) + 0.75rem) calc(44 * var(--k) + 0.75rem);
   font-family: var(--font-mono);
   font-size: var(--text-body);
   line-height: 1.3;
@@ -508,4 +787,469 @@ body {
   gap: 1em;
   visibility: hidden;
   pointer-events: none;
+}
+
+/* ── Type (components/Typography) ──
+   One class per variant: the Kelex type scale, all IBM Plex Mono Regular. */
+.type {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+.type--label { font-size: 12.8px; line-height: 1.3; }
+.type--paragraph { font-size: 16px; line-height: 1.3; }
+.type--header-3 { font-size: 20.8px; line-height: 1.3; }
+.type--header-2 { font-size: 24px; line-height: 1.3; }
+.type--header-1 { font-size: 24px; line-height: 1.3; }
+.type--subtitle-3 { font-size: 36px; line-height: 1.3; }
+.type--subtitle-2 { font-size: 44px; line-height: 1.3; }
+.type--subtitle-1 { font-size: 64px; line-height: 1.3; }
+.type--title-3 { font-size: 86px; line-height: 1.3; }
+.type--title-2 { font-size: 96px; line-height: 1.3; }
+.type--title-1 { font-size: 130px; line-height: 1.3; }
+.type--display-2 { font-size: 172px; line-height: 1.3; }
+.type--display-1 { font-size: 258px; line-height: 1.3; }
+
+/* ── Chroma lag effect (components/ChromaLagEffect) ── */
+.chroma-lag {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 800 / 320;
+  background-color: rgb(5, 5, 4);
+}
+/* The canvas stays clear until the first frame is drawn (the effect sets data-render-ready). */
+.chroma-lag__canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+.chroma-lag__canvas[data-render-ready] {
+  opacity: 1;
+}
+/* On a card the effect fills the card's inner shape, over the plain <video>/<img> underneath (which
+   shows through until the WebGL canvas is ready, and stays as the fallback without WebGL2). It has
+   no aspect ratio or backdrop of its own there. It stops 1px short of the card's edge, where the 1px
+   border is: the browser snaps a WebGL canvas to whole pixels while a card can sit at a fractional
+   position, and the canvas would otherwise paint over part of the border (see .card__ring). */
+.card__effect {
+  position: absolute;
+  inset: 0.0625rem;
+  width: calc(100% - 0.125rem);
+  height: calc(100% - 0.125rem);
+  aspect-ratio: auto;
+  background-color: transparent;
+}
+/* In a framed card the effect fills its own box (.card__media-box), which is well inside the border. */
+.card__effect--framed {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Modal and lightbox (components/Modal) ── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.56);
+}
+.modal__panel {
+  --bevel-color: var(--grey-800, #151517);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  color: var(--grey-100, #ffffff);
+  font-family: var(--font-mono);
+}
+.modal__panel--small { width: 15rem; }
+.modal__panel--medium { width: 26.25rem; }
+.modal__panel--large { width: 37.5rem; }
+.modal__panel--lightbox {
+  width: 80vw;
+  height: 80dvh;
+}
+.modal__container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  background-color: var(--grey-800, #151517);
+  border-top: 0.0625rem solid var(--grey-100, #ffffff);
+  border-bottom: 0.0625rem solid var(--grey-100, #ffffff);
+}
+.modal__header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 0.0625rem solid var(--grey-100, #ffffff);
+}
+.modal__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-label);
+  line-height: 1;
+  color: var(--grey-100, #ffffff);
+}
+.modal__close {
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  color: var(--grey-100, #ffffff);
+  transition: color 0.15s ease;
+}
+.modal__close:hover {
+  color: var(--grey-300, #ceced3);
+}
+.modal__close svg {
+  display: block;
+  flex-shrink: 0;
+}
+.modal__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1rem 0;
+}
+.modal__body > div {
+  flex: 1;
+}
+/* The lightbox body gives its picture the whole remaining area to fit itself to. */
+.modal__body--fit {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+}
+.modal__fit {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+}
+.modal__footer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-top: 0.0625rem solid var(--grey-100, #ffffff);
+}
+.lightbox__media {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* While a modal is open the page behind it doesn't scroll. */
+body.is-scroll-locked {
+  overflow: hidden;
+}
+
+/* ── Bevel (components/Bevel) — the chamfered edge strips either side of a panel ──
+   8px wide, filled with --bevel-color (else the text colour). "Outlined" bevels trace the panel's
+   perimeter with a 1px line in --bevel-line: the notch's diagonal, the vertical edge and the
+   horizontal connector that closes the plain corner against the panel's own top or bottom border. */
+.bevel {
+  --bevel-stroke: var(--grey-100, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  flex-shrink: 0;
+  width: 0.5rem;
+  color: var(--bevel-color, currentColor);
+}
+.bevel--flat,
+.bevel--outlined {
+  align-items: flex-start;
+}
+.bevel--flat.bevel--right,
+.bevel--outlined.bevel--right {
+  align-items: flex-end;
+}
+.bevel__notch {
+  display: block;
+  flex-shrink: 0;
+}
+.bevel__notch-fill {
+  fill: currentColor;
+}
+.bevel__notch-line {
+  fill: none;
+  stroke: var(--bevel-line, currentColor);
+  stroke-width: 1;
+}
+.bevel__fill {
+  flex: 1 0 0;
+  min-height: 0;
+  background-color: currentColor;
+}
+.bevel__line {
+  flex: 1 0 0;
+  min-height: 0;
+  border-left: 0.0625rem solid currentColor;
+}
+.bevel--right .bevel__line {
+  border-left: 0;
+  border-right: 0.0625rem solid currentColor;
+}
+.bevel--tertiary {
+  --bevel-line: currentColor;
+}
+.bevel--filled {
+  --bevel-line: var(--bevel-stroke);
+}
+/* The vertical edge fills the strip's width — without it, a content-less item aligned to one side
+   collapses to its 1px border and its fill never paints. */
+.bevel__edge {
+  flex: 1 0 0;
+  min-height: 0;
+  width: 100%;
+  border-left: 0.0625rem solid var(--bevel-line);
+}
+.bevel--right .bevel__edge {
+  border-left: 0;
+  border-right: 0.0625rem solid var(--bevel-line);
+}
+.bevel__connector {
+  width: 100%;
+}
+.bevel--left .bevel__connector {
+  border-bottom: 0.0625rem solid var(--bevel-line);
+}
+.bevel--right .bevel__connector {
+  border-top: 0.0625rem solid var(--bevel-line);
+}
+.bevel--filled .bevel__edge,
+.bevel--filled .bevel__connector {
+  background-color: currentColor;
+}
+
+/* ── KelexButtonDemo (components/KelexButtonDemo) — a live loop of the three button types ──
+   Each .kelex-btn-demo__btn is a row: <Bevel side="left"> | body | <Bevel side="right">, the same
+   shape Modal uses. Bevel's fill (primary) and outline (tertiary) both read currentColor, so one
+   keyframe animation on the wrapper's own `color` (plus `transform` for the hover/press motion) is
+   all three button types need — no separate per-state asset. */
+.kelex-btn-demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: var(--grey-900, #000000);
+  border: 0.0625rem solid var(--grey-200, #e3e3e5);
+  padding: 3rem 1.5rem;
+}
+.kelex-btn-demo__row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+.kelex-btn-demo__btn {
+  display: flex;
+  align-items: stretch;
+  min-width: 8.125rem;
+  font-family: var(--font-mono);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: 4.2s;
+  will-change: transform;
+}
+.kelex-btn-demo__body {
+  display: flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+}
+.kelex-btn-demo__label {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Primary and Secondary: a filled Bevel, so the wrapper's animated `color` is the fill — the body
+   picks that same fill up via currentColor, while the label keeps its own constant ink. */
+.kelex-btn-demo__btn--primary,
+.kelex-btn-demo__btn--secondary {
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+.kelex-btn-demo__btn--primary .kelex-btn-demo__body,
+.kelex-btn-demo__btn--secondary .kelex-btn-demo__body {
+  background-color: currentColor;
+}
+.kelex-btn-demo__btn--primary .kelex-btn-demo__label {
+  color: var(--grey-800, #151517);
+}
+.kelex-btn-demo__btn--secondary .kelex-btn-demo__label {
+  color: var(--grey-100, #ffffff);
+}
+/* `background-color: currentColor` on the row itself, behind the bevels and the body, which all
+   paint that same currentColor independently: with `transform: scale()` promoting this row to its
+   own compositing layer, adjacent children can round to the pixel grid a fraction of a px apart,
+   leaving a hairline gap. Matching the row's own background closes it, since the "gap" then reveals
+   more of the same color instead of the page behind it. Clipped to the same chamfer Bevel's own
+   8px (0.5rem) notch cuts — a plain rectangle here would paint straight over those corners and
+   erase them, which a clip-path matching Bevel's NOTCH constant avoids. */
+.kelex-btn-demo__btn--primary,
+.kelex-btn-demo__btn--secondary {
+  clip-path: polygon(0 0.5rem, 0.5rem 0, 100% 0, 100% calc(100% - 0.5rem), calc(100% - 0.5rem) 100%, 0 100%);
+}
+.kelex-btn-demo__btn--primary {
+  color: var(--grey-100, #ffffff);
+  background-color: currentColor;
+  animation-name: kelex-btn-demo-primary;
+}
+.kelex-btn-demo__btn--secondary {
+  color: var(--grey-400, #ababb1);
+  background-color: currentColor;
+  animation-name: kelex-btn-demo-secondary;
+}
+
+/* Tertiary: Bevel's outline-only variant; the body has no fill, just the matching top/bottom
+   border, and the icon/label simply inherit the one animated color. */
+.kelex-btn-demo__btn--tertiary {
+  color: var(--grey-100, #ffffff);
+  animation-name: kelex-btn-demo-tertiary;
+}
+.kelex-btn-demo__btn--tertiary .kelex-btn-demo__body {
+  border-top: 0.0625rem solid currentColor;
+  border-bottom: 0.0625rem solid currentColor;
+}
+
+@keyframes kelex-btn-demo-primary {
+  0%, 13% { transform: scale(1); color: var(--grey-100, #ffffff); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+  17% { transform: translateY(-0.3125rem) scale(1.065); color: var(--grey-200, #e3e3e5); box-shadow: 0 0.625rem 1.125rem rgba(0, 0, 0, 0.3); }
+  21%, 44% { transform: translateY(-0.25rem) scale(1.045); color: var(--grey-200, #e3e3e5); box-shadow: 0 0.5rem 0.875rem rgba(0, 0, 0, 0.26); }
+  47% { transform: translateY(0.0625rem) scale(0.965); color: var(--grey-300, #ceced3); box-shadow: 0 0.1875rem 0.375rem rgba(0, 0, 0, 0.22); }
+  51% { transform: translateY(-0.3125rem) scale(1.07); color: var(--grey-200, #e3e3e5); box-shadow: 0 0.6875rem 1.125rem rgba(0, 0, 0, 0.3); }
+  55%, 63% { transform: translateY(-0.25rem) scale(1.045); color: var(--grey-200, #e3e3e5); box-shadow: 0 0.5rem 0.875rem rgba(0, 0, 0, 0.26); }
+  77%, 100% { transform: scale(1); color: var(--grey-100, #ffffff); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+}
+@keyframes kelex-btn-demo-secondary {
+  0%, 13% { transform: scale(1); color: var(--grey-400, #ababb1); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+  17% { transform: translateY(-0.3125rem) scale(1.065); color: var(--grey-500, #858484); box-shadow: 0 0.625rem 1.125rem rgba(0, 0, 0, 0.34); }
+  21%, 44% { transform: translateY(-0.25rem) scale(1.045); color: var(--grey-500, #858484); box-shadow: 0 0.5rem 0.875rem rgba(0, 0, 0, 0.3); }
+  47% { transform: translateY(0.0625rem) scale(0.965); color: var(--grey-600, #706e6e); box-shadow: 0 0.1875rem 0.375rem rgba(0, 0, 0, 0.26); }
+  51% { transform: translateY(-0.3125rem) scale(1.07); color: var(--grey-500, #858484); box-shadow: 0 0.6875rem 1.125rem rgba(0, 0, 0, 0.34); }
+  55%, 63% { transform: translateY(-0.25rem) scale(1.045); color: var(--grey-500, #858484); box-shadow: 0 0.5rem 0.875rem rgba(0, 0, 0, 0.3); }
+  77%, 100% { transform: scale(1); color: var(--grey-400, #ababb1); box-shadow: 0 0 0 rgba(0, 0, 0, 0); }
+}
+@keyframes kelex-btn-demo-tertiary {
+  0%, 13% { transform: scale(1); color: var(--grey-100, #ffffff); }
+  17%, 21%, 44%, 51%, 55%, 63% { transform: translateY(-0.25rem) scale(1.045); color: var(--grey-200, #e3e3e5); }
+  47% { transform: translateY(0.0625rem) scale(0.965); color: var(--grey-400, #ababb1); }
+  77%, 100% { transform: scale(1); color: var(--grey-100, #ffffff); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kelex-btn-demo__btn {
+    animation: none !important;
+  }
+  .kelex-btn-demo__btn--primary { transform: none; color: var(--grey-100, #ffffff); }
+  .kelex-btn-demo__btn--secondary { transform: none; color: var(--grey-400, #ababb1); }
+  .kelex-btn-demo__btn--tertiary { transform: none; color: var(--grey-100, #ffffff); }
+}
+
+/* ── KelexGalaxyMenu (components/KelexGalaxyMenu) — a live loop of the side-navigation menu ──
+   Every row sits at its real default; one row at a time takes a turn through Hover, Active (the
+   cyan-filled Bevel, same `--cyan-300` token.css already documents as the selected-item marker)
+   and Focus (the outlined Bevel bracket), driven by the component's own JS timer rather than CSS
+   keyframes, since each phase swaps in a structurally different Bevel. */
+.kelex-galaxy-menu-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: var(--grey-900, #000000);
+  border: 0.0625rem solid var(--grey-200, #e3e3e5);
+  padding: 2.5rem 1.5rem;
+}
+.kelex-galaxy-menu {
+  display: flex;
+  align-items: stretch;
+  font-family: var(--font-mono);
+  color: var(--grey-100, #ffffff);
+}
+.kelex-galaxy-menu__container {
+  display: flex;
+  flex-direction: column;
+  width: 14rem;
+  border-top: 0.0625rem solid var(--grey-100, #ffffff);
+  border-bottom: 0.0625rem solid var(--grey-100, #ffffff);
+  padding: 0.5rem 0;
+}
+.kelex-galaxy-menu__header {
+  margin: 0 0.5rem 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 0.0625rem solid var(--grey-100, #ffffff);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--grey-100, #ffffff);
+}
+.kelex-galaxy-menu__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.kelex-galaxy-menu__row {
+  display: flex;
+  align-items: stretch;
+}
+.kelex-galaxy-menu__row-edge {
+  width: 0.5rem;
+  flex-shrink: 0;
+}
+.kelex-galaxy-menu__label {
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.25rem;
+  font-size: 1rem;
+  color: var(--grey-100, #ffffff);
+  transition: color 180ms ease;
+}
+.kelex-galaxy-menu__row--hover .kelex-galaxy-menu__label {
+  color: var(--grey-200, #e3e3e5);
+}
+.kelex-galaxy-menu__row--active {
+  color: var(--cyan-300, #00fff2);
+}
+.kelex-galaxy-menu__row--active .kelex-galaxy-menu__label {
+  background-color: var(--cyan-300, #00fff2);
+  color: var(--grey-900, #000000);
+  transition: none;
+}
+.kelex-galaxy-menu__row--focus {
+  color: var(--grey-100, #ffffff);
+}
+.kelex-galaxy-menu__row--focus .kelex-galaxy-menu__label {
+  border-top: 0.0625rem solid var(--grey-100, #ffffff);
+  border-bottom: 0.0625rem solid var(--grey-100, #ffffff);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kelex-galaxy-menu__label {
+    transition: none;
+  }
 }

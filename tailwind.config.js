@@ -30,7 +30,7 @@ export default {
         '40': '40px',
         '80': '80px',
       },
-      // Every step routes through its CSS custom property (tokens.css),
+      // Every step routes through its CSS custom property (src/tokens/tokens.css),
       // with the dark-theme hex as fallback — so Tailwind utility classes
       // like `text-grey-100` stay theme-reactive under `[data-theme="light"]`
       // instead of baking in a literal, unchanging color.

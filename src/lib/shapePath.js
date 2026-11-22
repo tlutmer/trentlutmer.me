@@ -1,4 +1,4 @@
-import { insetPolygon } from './randomShape'
+import { insetPolygon } from './randomShape.js'
 
 // Splits on `sep` only at parenthesis depth 0 (calc() contains spaces and commas).
 function splitTop(str, sep) {

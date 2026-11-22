@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="440" viewBox="0 0 900 440" role="img" aria-label="Status pending, on deck, code 010">
+  <defs>
+    <pattern id="rib" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="#eeab3d" />
+      <rect width="4" height="1" fill="#3a2308" />
+    </pattern>
+    <pattern id="stripes" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="34" height="34" fill="#0c0301" />
+      <rect width="17" height="34" fill="url(#rib)" />
+    </pattern>
+  </defs>
+
+  <rect width="900" height="440" fill="#0c0301" />
+  
+  <g>
+    <clipPath id="band-clip-0"><rect x="0" y="0" width="900" height="132" /></clipPath>
+    <g clip-path="url(#band-clip-0)">
+      <rect x="0" y="0" width="450" height="132" fill="url(#stripes)" />
+      <rect x="0" y="0" width="450" height="132" fill="url(#stripes)" transform="translate(900,0) scale(-1,1)" />
+    </g>
+  </g>
+  
+  <g>
+    <clipPath id="band-clip-308"><rect x="0" y="308" width="900" height="132" /></clipPath>
+    <g clip-path="url(#band-clip-308)">
+      <rect x="0" y="308" width="450" height="132" fill="url(#stripes)" />
+      <rect x="0" y="308" width="450" height="132" fill="url(#stripes)" transform="translate(900,0) scale(-1,1)" />
+    </g>
+  </g>
+
+  <rect x="6" y="138" width="888" height="164" rx="10" fill="#0c0301" stroke="#c93524" stroke-width="3" />
+  <g>
+    <clipPath id="text-clip"><rect x="6" y="138" width="888" height="164" rx="10" /></clipPath>
+    <g clip-path="url(#text-clip)">
+  <text x="225" y="186" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-weight="700" font-size="16" letter-spacing="2" fill="#eeab3d">STATUS: PENDING</text>
+  <text x="225" y="240" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-weight="700" font-size="56" letter-spacing="4" fill="#eeab3d">ON DECK</text>
+  <text x="225" y="278" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-weight="700" font-size="16" letter-spacing="2" fill="#eeab3d">CODE: 010</text>
+  <text x="675" y="186" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-weight="700" font-size="16" letter-spacing="2" fill="#eeab3d">STATUS: PENDING</text>
+  <text x="675" y="240" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-weight="700" font-size="56" letter-spacing="4" fill="#eeab3d">ON DECK</text>
+  <text x="675" y="278" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-weight="700" font-size="16" letter-spacing="2" fill="#eeab3d">CODE: 010</text></g>
+  </g>
+</svg>

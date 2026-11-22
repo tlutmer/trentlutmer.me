@@ -1,47 +1,53 @@
-import { ProjectPage } from './ProjectPage'
+import { P, Paragraphs } from '../components/CaseStudy/CaseStudy'
+import { ProjectSplit } from '../components/ProjectSplit/ProjectSplit'
 
-// Ported from v2. (v2's first card also stacked face-shot.png under the timer
-// video; the video covers it completely at 16:9, so only the video is used.)
 export function Fartlek() {
   return (
-    <ProjectPage
-      slug="fartlek"
-      heading="Fartlek"
-      cards={[
+    <ProjectSplit
+      title="Fartlek"
+      lead="Swedish for “speed play.”"
+      info={[
+        { label: 'About', value: 'An interval timer for cross-country-style training: sets of work and rest, with a sci-fi segment clock for the same sets.' },
         {
-          video: '/video/fartlek-timer.mp4',
-          copy: 'A minimal interval timer for set-based tasks.',
-        },
-        {
-          video: '/video/fartlek-web.mp4',
-          pingPong: true,
-          copy: [
-            "Sci-fi segment clock — three concentric rings: sets outside, work in the middle, rest inside. Each segment is one configured unit; spent segments go dark as you go, and the active phase's ring lights up in the set's color while the others recede.",
-          ],
-        },
-        {
-          video: '/video/fartlek.mp4',
-          copy: (
-            <>
-              Visit{' '}
-              <a href="https://www.fartlek.xyz/" target="_blank" rel="noreferrer" className="about__inline-link">
-                fartlek.xyz
-              </a>{' '}
-              or get for{' '}
-              {/* Placeholder destinations — swap for the real store listings once they're up. */}
-              <a href="#" className="about__inline-link">
-                Android
-              </a>{' '}
-              and{' '}
-              <a href="#" className="about__inline-link">
-                iOS
-              </a>
-              .
-            </>
+          label: 'Get it',
+          value: (
+            <a href="https://www.fartlek.xyz/" target="_blank" rel="noreferrer" className="about__inline-link" tabIndex={0}>
+              fartlek.xyz<span className="sr-only"> (opens in a new tab)</span>
+            </a>
           ),
         },
       ]}
-    />
+      media={[
+        { video: '/media/fartlek/fartlek-timer.mp4' },
+        { video: '/media/fartlek/fartlek-web.mp4', pingPong: true },
+        { video: '/media/fartlek/fartlek.mp4' },
+      ]}
+    >
+      <Paragraphs>
+        <P>
+          Fartlek is Swedish for “speed play.” It's a cross-country training
+          method where you mix hard efforts and easy recovery in repeated intervals, instead of holding
+          one steady pace.
+        </P>
+        <P>
+          Fartlek the app is a minimal interval timer that supports that kind of workout. Set how long you
+          work, how long you rest and how many times to repeat, and it keeps count so you can keep running.
+        </P>
+        <P>
+          Sci-fi segment clock — three concentric rings: sets outside, work in the middle, rest inside.
+          Each segment is one configured unit; spent segments go dark as you go, and the active phase's
+          ring lights up in the set's color while the others recede.
+        </P>
+        <P>
+          Visit{' '}
+          <a href="https://www.fartlek.xyz/" target="_blank" rel="noreferrer" className="about__inline-link" tabIndex={0}>
+            fartlek.xyz<span className="sr-only"> (opens in a new tab)</span>
+          </a>
+          .
+          {/* Android and iOS store links are hidden until the real listings are up. */}
+        </P>
+      </Paragraphs>
+    </ProjectSplit>
   )
 }
 
