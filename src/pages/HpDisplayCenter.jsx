@@ -10,8 +10,10 @@ import { Typography } from '../components/Typography/Typography'
 const SHOT = (n) => `/media/hp-dc/hp-dc-00${n}.jpg`
 
 // A picture shown smaller inside a black card (PaddedPicture): the card keeps the picture's proportions.
-const padded = (src, ratio, alt, padding = '3rem') => ({
-  component: <PaddedPicture src={src} size={ratio} ratio={ratio} alt={alt} padding={padding} />,
+// `size` is the file's own [w, h] when it differs from the card's `ratio` (the recordings cropped to the
+// app window, 1428×1080, in a 16:9 card).
+const padded = (src, ratio, alt, padding = '3rem', size = ratio) => ({
+  component: <PaddedPicture src={src} size={size} ratio={ratio} alt={alt} padding={padding} />,
 })
 
 const MEDIA = [
@@ -20,11 +22,11 @@ const MEDIA = [
     ratio: [2880, 2048],
     alt: 'HP Display Center in its dark theme on the Display tab: brightness, contrast, sharpness and black stretch controls, beside a list of five connected HP monitors, over a beach wallpaper.',
   },
-  { image: '/media/hp-dc/HP_Display_1080p_loop.gif', ratio: [1920, 1080], alt: 'A screen recording of the HP Display Center Display tab.' },
-  padded('/media/hp-dc/HP_Color_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center Color tab.'),
-  padded('/media/hp-dc/HP_Input_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center Input tab.'),
+  { image: '/media/hp-dc/HP_Display_1080p_loop.gif', ratio: [1428, 1080], alt: 'A screen recording of the HP Display Center Display tab.' },
+  padded('/media/hp-dc/HP_Color_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center Color tab.', '3rem', [1428, 1080]),
+  padded('/media/hp-dc/HP_Input_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center Input tab.', '3rem', [1428, 1080]),
   padded('/media/hp-dc/HP_View_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center View tab.'),
-  padded('/media/hp-dc/HP_AudioCamera_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center audio and camera settings.'),
+  padded('/media/hp-dc/HP_AudioCamera_1080p_loop.gif', [1920, 1080], 'A screen recording of the HP Display Center audio and camera settings.', '3rem', [1428, 1080]),
   padded(SHOT(2), [2880, 2048], 'HP Display Center, dark theme, Input tab: input source choices, resolution and refresh rate, and speaker volume with a mute toggle.'),
   padded(SHOT(3), [2880, 2048], 'HP Display Center, dark theme, View tab: pivot options at 0, 90, 180 and 270 degrees, and a grid of desktop partition layouts.'),
   {

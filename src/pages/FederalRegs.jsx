@@ -4,8 +4,9 @@ import { PaddedPicture } from '../components/PaddedPicture/PaddedPicture'
 import { ProjectSplit } from '../components/ProjectSplit/ProjectSplit'
 
 // Looping screen recordings (public/media/fedregs), shown in the same padded black card as the other project pages.
+// The recordings are cropped to the product frame (1382×1080); the card stays 16:9.
 const gif = (file, alt) => ({
-  component: <PaddedPicture src={`/media/fedregs/${file}`} size={[1920, 1080]} ratio={[1920, 1080]} alt={alt} padding="3rem" />,
+  component: <PaddedPicture src={`/media/fedregs/${file}`} size={[1382, 1080]} ratio={[1920, 1080]} alt={alt} padding="3rem" />,
 })
 
 const RECORDINGS = [

@@ -15,15 +15,14 @@ export function Kelex() {
           label: 'About',
           value: 'A futuristic user interface (FUI) — design tokens, reusable components, and layout patterns for dark, dense interfaces.',
         },
-        // Hidden for now: the "See it live" link to kelex.tech.
-        //{
-        //  label: 'See it live',
-        //  value: (
-        //    <a href="https://www.kelex.tech/" target="_blank" rel="noreferrer" className="about__inline-link" tabIndex={0}>
-        //      kelex.tech<span className="sr-only"> (opens in a new tab)</span>
-        //    </a>
-        //  ),
-        //},
+        {
+          label: 'See it live',
+          value: (
+            <a href="https://kelex.tech/" target="_blank" rel="noreferrer" className="about__inline-link" tabIndex={0}>
+              kelex.tech<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          ),
+        },
       ]}
       media={[
         {

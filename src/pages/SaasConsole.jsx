@@ -15,8 +15,9 @@ const IMAGES = {
 }
 
 // Looping screen recordings (public/media/mcsp-iam), one per area of Access management, in the order they're introduced.
-const gif = (file, alt) => ({
-  component: <PaddedPicture src={`/media/mcsp-iam/${file}`} size={[1920, 1080]} ratio={[1920, 1080]} alt={alt} padding="3rem" />,
+// The MP4 recordings are cropped to the product frame (1574×1080); the card stays 16:9. `size` is the file's own [w, h].
+const gif = (file, alt, size = [1574, 1080]) => ({
+  component: <PaddedPicture src={`/media/mcsp-iam/${file}`} size={size} ratio={[1920, 1080]} alt={alt} padding="3rem" />,
 })
 
 const RECORDINGS = [
@@ -24,7 +25,7 @@ const RECORDINGS = [
   gif('MCSP_UserGroups_1080p_loop.gif', 'A screen recording of the User groups page: creating a group and managing its members.'),
   gif('MCSP_ServiceIDs_1080p_loop.gif', 'A screen recording of the Service IDs page: creating and managing service IDs.'),
   gif('MCSP_APIKeys_1080p_loop.gif', 'A screen recording of the API keys page: creating and managing API keys.'),
-  gif('MCSP_InstanceDetails_1080p_loop.gif', 'A screen recording of an instance\'s details page.'),
+  gif('MCSP_InstanceDetails_1080p_loop.gif', 'A screen recording of an instance\'s details page.', [1920, 1080]),
   gif('MCSP_Roles_1080p_loop.gif', 'A screen recording of the Roles page: viewing and assigning roles.'),
 ]
 
